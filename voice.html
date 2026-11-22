@@ -199,18 +199,7 @@
       animation: blink 1s steps(2, start) infinite;
     }
     @keyframes blink { to { visibility: hidden; } }
-    .rec-count {
-      position: absolute;
-      display: none;
-      color: #fff;
-      font-size: 56px;
-      font-weight: 800;
-      text-shadow: 0 2px 12px rgba(0,0,0,.5);
-      pointer-events: none;
-    }
-    .rec-bar { position: absolute; left: 0; bottom: 0; height: 6px; width: 0; background: var(--red); display: none; }
     .mic-box.recording .rec-badge { display: inline-flex; }
-    .mic-box.recording .rec-count, .mic-box.recording .rec-bar { display: block; }
     .mic-row { display: flex; gap: 8px; margin-top: 10px; }
     .mic-row button { flex: 1; }
     .rec-btn.recording { background: var(--red); opacity: 1; }
@@ -264,7 +253,7 @@
       border: 1px dashed var(--line);
       border-radius: 12px;
     }
-    .listen-box canvas { width: 100%; height: 120px; display: block; }
+    .listen-box canvas { width: 100%; height: 150px; display: block; border-radius: 8px; }
     .listen-box audio { width: 100%; }
     .preview-controls { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; }
     .preview-controls button { padding: 9px 12px; }
@@ -458,9 +447,7 @@
             '<div class="mic-box">' +
               '<canvas class="live"></canvas>' +
               '<div class="mic-off-msg">마이크가 꺼져 있어요</div>' +
-              '<span class="rec-badge">녹음 중</span>' +
-              '<div class="rec-count"></div>' +
-              '<div class="rec-bar"></div>' +
+              '<span class="rec-badge"></span>' +
             '</div>' +
             '<div class="mic-row">' +
               '<button class="btn-outline mic-btn">마이크 켜기</button>' +
@@ -488,7 +475,7 @@
       c.el = {
         row, noText: q('.no-text'), dot: q('.row-no .dot'), name: q('.cls-name'),
         micBox: q('.mic-box'), live: q('.live'), micOff: q('.mic-off-msg'),
-        count: q('.rec-count'), bar: q('.rec-bar'),
+        count: q('.rec-badge'),
         micBtn: q('.mic-btn'), recBtn: q('.rec-btn'),
         cnt: q('.cnt'), gallery: q('.gallery'),
         info: q('.preview-info'), listen: q('.listen-box'),
@@ -595,31 +582,93 @@
       classes.forEach(renderMic);
     }
 
-    // 마이크 소리를 실시간 파형으로 그리기
+    // ===== 녹음창: 5초 파형 + 초 눈금 =====
+    // 화면이 바뀔 때마다 마이크 소리 크기(최댓값)를 하나씩 모아 막대로 그림
+    let rollPts = [];          // 최근 5초 소리 크기 { t, v } (녹음 전 미리보기)
+    let recPts = [];           // 지금 녹음 중인 소리 크기 { t, v }
+    const RULER_H = 22;        // 아래 눈금 높이(px)
+
+    // 초 눈금 그리기 (0초 ~ sec초, 0.5초마다 작은 눈금)
+    function drawRuler(g, w, h, sec, dark) {
+      const top = h - RULER_H, waveH = top;
+      g.strokeStyle = dark ? 'rgba(148, 163, 184, .18)' : 'rgba(100, 116, 139, .15)';
+      g.lineWidth = 1;
+      for (let s = 1; s < sec; s++) {              // 1초마다 세로 보조선
+        const x = Math.round(s / sec * w) + .5;
+        g.beginPath(); g.moveTo(x, 0); g.lineTo(x, waveH); g.stroke();
+      }
+      g.strokeStyle = dark ? 'rgba(148, 163, 184, .35)' : 'rgba(100, 116, 139, .3)';
+      g.beginPath(); g.moveTo(0, waveH / 2 + .5); g.lineTo(w, waveH / 2 + .5); g.stroke();   // 가운데 선
+
+      g.fillStyle = dark ? '#1e293b' : '#f1f5f9';
+      g.fillRect(0, top, w, RULER_H);
+      g.strokeStyle = dark ? '#64748b' : '#94a3b8';
+      g.fillStyle = dark ? '#cbd5e1' : '#64748b';
+      g.font = '11px "Pretendard", "Noto Sans KR", sans-serif';
+      g.textBaseline = 'middle';
+      for (let i = 0; i <= sec * 2; i++) {
+        const s = i / 2, major = i % 2 === 0;
+        const x = Math.min(w - .5, Math.max(.5, Math.round(s / sec * w) + .5));
+        g.beginPath(); g.moveTo(x, top); g.lineTo(x, top + (major ? 7 : 4)); g.stroke();
+        if (major) {
+          g.textAlign = s === 0 ? 'left' : s === sec ? 'right' : 'center';
+          g.fillText(s + '초', s === 0 ? x + 3 : s === sec ? x - 3 : x, top + 14);
+        }
+      }
+    }
+
     function drawLive() {
       cancelAnimationFrame(liveRaf);
-      const data = new Uint8Array(2048);
+      const data = new Float32Array(analyser.fftSize);
       const loop = () => {
         if (!analyser) return;
-        analyser.getByteTimeDomainData(data);
+        analyser.getFloatTimeDomainData(data);
+        let peak = 0;
+        for (let i = 0; i < data.length; i++) { const v = Math.abs(data[i]); if (v > peak) peak = v; }
+        const now = performance.now();
+        rollPts.push({ t: now, v: peak });
+        while (rollPts.length && now - rollPts[0].t > REC_SECONDS * 1000) rollPts.shift();
+        if (recording) recPts.push({ t: now, v: peak });
+
         classes.forEach(c => {
           const cv = c.el.live;
           const w = cv.clientWidth, h = cv.clientHeight;
           if (!w || !h) return;
           const dpr = window.devicePixelRatio || 1;
-          if (cv.width !== Math.round(w * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+          if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) {
+            cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+          }
           const g = cv.getContext('2d');
           g.setTransform(dpr, 0, 0, dpr, 0, 0);
           g.clearRect(0, 0, w, h);
-          g.lineWidth = 2;
-          g.strokeStyle = recording && recording.c === c ? '#f87171' : '#60a5fa';
-          g.beginPath();
-          for (let i = 0; i < data.length; i++) {
-            const x = i / (data.length - 1) * w;
-            const y = h / 2 + (data[i] - 128) / 128 * (h / 2) * 0.9;
-            i ? g.lineTo(x, y) : g.moveTo(x, y);
+          drawRuler(g, w, h, REC_SECONDS, true);
+
+          const waveH = h - RULER_H, mid = waveH / 2;
+          const mine = recording && recording.c === c;
+          const pts = mine ? recPts : rollPts;
+          const span = REC_SECONDS * 1000;
+          // 녹음 중: 0초부터 오른쪽으로 채워짐 / 평소: 최근 5초가 오른쪽에서 왼쪽으로 흐름
+          const xOf = mine ? (p) => (p.t - recording.t0) / span * w : (p) => w - (now - p.t) / span * w;
+          const bw = Math.max(1.5, w / (REC_SECONDS * 60));
+          g.fillStyle = mine ? '#f87171' : '#60a5fa';
+          pts.forEach(p => {
+            const x = xOf(p);
+            if (x < 0 || x > w) return;
+            const bh = Math.max(1.5, Math.min(1, p.v * 1.4) * (waveH - 8));
+            g.fillRect(x - bw / 2, mid - bh / 2, bw, bh);
+          });
+          if (mine) {
+            // 지금 위치 표시선
+            const x = Math.min(w, (now - recording.t0) / span * w);
+            g.fillStyle = '#fff';
+            g.fillRect(x - 1, 0, 2, waveH);
+          } else {
+            g.fillStyle = 'rgba(203, 213, 225, .75)';
+            g.font = '12px "Pretendard", "Noto Sans KR", sans-serif';
+            g.textAlign = 'right';
+            g.textBaseline = 'top';
+            g.fillText('최근 ' + REC_SECONDS + '초 소리', w - 8, 8);
           }
-          g.stroke();
         });
         liveRaf = requestAnimationFrame(loop);
       };
@@ -644,14 +693,15 @@
       };
       if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
       recorder.start();
+      recPts = [];
       recording = { c, recorder, t0: performance.now() };
       classes.forEach(renderMic);
 
       const update = () => {
-        const left = Math.max(0, REC_SECONDS - (performance.now() - recording.t0) / 1000);
-        c.el.count.textContent = Math.ceil(left);
-        c.el.bar.style.width = (100 - left / REC_SECONDS * 100) + '%';
-        c.el.recBtn.textContent = '녹음 중... ' + left.toFixed(1) + '초';
+        if (!recording) return;
+        const passed = Math.min(REC_SECONDS, (performance.now() - recording.t0) / 1000);
+        c.el.count.textContent = '녹음 중 ' + passed.toFixed(1) + '초 / ' + REC_SECONDS + '초';
+        c.el.recBtn.textContent = '녹음 중... ' + (REC_SECONDS - passed).toFixed(1) + '초 남음';
       };
       update();
       recording.tick = setInterval(update, 100);
@@ -716,8 +766,8 @@
       return peaks;
     }
 
-    // 파형(막대) 그리기
-    function drawWave(cv, peaks, color) {
+    // 파형(막대) 그리기 — ruler에 녹음 길이(초)를 주면 아래에 초 눈금도 그림
+    function drawWave(cv, peaks, color, ruler) {
       const w = cv.clientWidth || 110, h = cv.clientHeight || 60;
       const dpr = window.devicePixelRatio || 1;
       cv.width = Math.round(w * dpr);
@@ -725,18 +775,21 @@
       const g = cv.getContext('2d');
       g.setTransform(dpr, 0, 0, dpr, 0, 0);
       g.clearRect(0, 0, w, h);
+      const waveH = ruler ? h - RULER_H : h;
+      if (ruler) drawRuler(g, w, h, REC_SECONDS, false);
       g.fillStyle = color;
       if (!peaks) {
-        g.fillRect(0, h / 2 - 1, w, 2);
+        g.fillRect(0, waveH / 2 - 1, w, 2);
         return;
       }
       let max = 0;
       peaks.forEach(p => { if (p > max) max = p; });
       const scale = max > 0 ? 1 / Math.max(max, 0.05) : 1;   // 작은 소리도 보이게
-      const bw = w / peaks.length;
+      const used = ruler ? w * Math.min(1, ruler / REC_SECONDS) : w;   // 실제 길이만큼만
+      const bw = used / peaks.length;
       peaks.forEach((p, i) => {
-        const bh = Math.max(2, p * scale * (h - 8));
-        g.fillRect(i * bw + bw * 0.15, (h - bh) / 2, Math.max(1, bw * 0.7), bh);
+        const bh = Math.max(2, p * scale * (waveH - 8));
+        g.fillRect(i * bw + bw * 0.15, (waveH - bh) / 2, Math.max(1, bw * 0.7), bh);
       });
     }
 
@@ -789,7 +842,7 @@
       const audio = c.el.listen.querySelector('audio');
       audio.src = k.url;
       audio.dataset.url = k.url;
-      drawWave(c.el.listen.querySelector('canvas'), k.peaks, '#2563eb');
+      drawWave(c.el.listen.querySelector('canvas'), k.peaks, '#2563eb', k.dur);
     }
 
     function move(c, d) {
