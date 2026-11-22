@@ -145,6 +145,70 @@
     .unlock-btn:hover, .unlock-btn:focus-visible { opacity: 1; background: var(--blue-weak); outline: none; }
     .lock[hidden] { display: none; }
 
+    .lock-menu {
+      position: fixed;
+      z-index: 50;
+      width: 240px;
+      padding: 12px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: 0 16px 36px rgba(15, 23, 42, .16);
+      font-size: 14px;
+    }
+    .lock-menu[hidden] { display: none; }
+    .lm-title { font-weight: 700; font-size: 13px; color: var(--sub); margin: 2px 4px 8px; }
+    .lm-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 6px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .lm-row:hover { background: #f8fafc; }
+    .lm-row > span:first-child { flex: 1; font-weight: 600; }
+    .lm-state { font-size: 12px; color: var(--sub); }
+    .lm-row input { position: absolute; opacity: 0; pointer-events: none; }
+    .sw {
+      position: relative;
+      width: 38px;
+      height: 22px;
+      border-radius: 999px;
+      background: #cbd5e1;
+      transition: background .15s;
+      flex-shrink: 0;
+    }
+    .sw::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 2px rgba(0,0,0,.2);
+      transition: transform .15s;
+    }
+    .lm-row input:checked + .sw { background: var(--blue); }
+    .lm-row input:checked + .sw::after { transform: translateX(16px); }
+    .lm-row input:focus-visible + .sw { outline: 2px solid var(--blue); outline-offset: 2px; }
+    .lm-actions { display: flex; gap: 6px; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
+    .lm-actions button {
+      flex: 1;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px;
+      border-radius: 9px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--blue);
+      cursor: pointer;
+    }
+    .lm-actions button:hover { border-color: var(--blue); }
+
     .toast {
       position: fixed;
       left: 50%;
@@ -183,16 +247,17 @@
     </section>
 
     <section class="cards">
-      <a class="card" href="image.html">
+      <div class="card soon lockable" role="button" tabindex="0" data-key="image" data-name="이미지" data-href="image.html" aria-label="이미지 (잠김)">
+        <span class="lock" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
         <div class="icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.5-4.5L6 21"/></svg>
         </div>
         <h2>이미지</h2>
         <p>웹캠으로 사진을 찍어 클래스 이름 폴더에 1.jpg, 2.jpg … 로 저장해요.</p>
-        <span class="go">시작하기 →</span>
-      </a>
+        <span class="go">🔒 잠겨 있어요</span>
+      </div>
 
-      <div class="card soon lockable" role="button" tabindex="0" data-name="음성" data-href="voice.html" aria-label="음성 (잠김)">
+      <div class="card soon lockable" role="button" tabindex="0" data-key="voice" data-name="음성" data-href="voice.html" aria-label="음성 (잠김)">
         <span class="lock" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
         <div class="icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v5"/></svg>
@@ -202,7 +267,7 @@
         <span class="go">🔒 잠겨 있어요</span>
       </div>
 
-      <div class="card soon lockable" role="button" tabindex="0" data-name="텍스트" data-href="text.html" aria-label="텍스트 (잠김)">
+      <div class="card soon lockable" role="button" tabindex="0" data-key="text" data-name="텍스트" data-href="text.html" aria-label="텍스트 (잠김)">
         <span class="lock" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
         <div class="icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>
@@ -219,6 +284,18 @@
     <button class="unlock-btn" id="unlockBtn" title="잠금 해제" aria-label="잠금 해제">🔒</button>
   </footer>
 
+  <!-- 잠금 버튼 오른쪽 클릭 메뉴: 항목별 잠금 조절 -->
+  <div class="lock-menu" id="lockMenu" role="dialog" aria-label="잠금 설정" hidden>
+    <div class="lm-title">잠금 설정</div>
+    <label class="lm-row"><span>🖼 이미지</span><span class="lm-state"></span><input type="checkbox" data-key="image"><span class="sw"></span></label>
+    <label class="lm-row"><span>🎤 음성</span><span class="lm-state"></span><input type="checkbox" data-key="voice"><span class="sw"></span></label>
+    <label class="lm-row"><span>📝 텍스트</span><span class="lm-state"></span><input type="checkbox" data-key="text"><span class="sw"></span></label>
+    <div class="lm-actions">
+      <button type="button" data-all="1">모두 풀기</button>
+      <button type="button" data-all="0">모두 잠그기</button>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <script>
@@ -230,35 +307,49 @@
       clearTimeout(toastTimer);
       toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
     }
-    // ===== 잠금 / 잠금 해제 (이 브라우저에 기억) =====
-    const KEY = 'sl-collector-unlocked';
+    // ===== 잠금 / 잠금 해제 (항목별, 이 브라우저에 기억) =====
+    const KEY = 'sl-collector-locks';
+    const KEYS = ['image', 'voice', 'text'];
+    const NAMES = { image: '이미지', voice: '음성', text: '텍스트' };
     const unlockBtn = document.getElementById('unlockBtn');
+    const lockMenu = document.getElementById('lockMenu');
 
-    function isUnlocked() {
-      try { return localStorage.getItem(KEY) === '1'; } catch (e) { return unlockedMemo; }
+    // { image: true } = 풀림. 기본은 모두 잠김
+    let opened = { image: false, voice: false, text: false };
+    try {
+      const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (saved) KEYS.forEach(k => opened[k] = !!saved[k]);
+    } catch (e) { /* 저장소를 못 쓰면 이번 화면에서만 적용 */ }
+
+    function save() {
+      try { localStorage.setItem(KEY, JSON.stringify(opened)); } catch (e) { /* 무시 */ }
     }
-    let unlockedMemo = false;   // 저장소를 못 쓰는 브라우저용
-    function setUnlocked(v) {
-      unlockedMemo = v;
-      try { v ? localStorage.setItem(KEY, '1') : localStorage.removeItem(KEY); } catch (e) { /* 이번 화면에서만 적용 */ }
-      renderLocks();
-    }
+    const isOpen = (k) => !!opened[k];
+    const allOpen = () => KEYS.every(isOpen);
+
+    function setOpen(k, v) { opened[k] = v; save(); renderLocks(); }
+    function setAll(v) { KEYS.forEach(k => opened[k] = v); save(); renderLocks(); }
 
     function renderLocks() {
-      const u = isUnlocked();
       document.querySelectorAll('.card.lockable').forEach(card => {
+        const u = isOpen(card.dataset.key);
         card.classList.toggle('soon', !u);
         card.querySelector('.lock').hidden = u;
         card.querySelector('.go').textContent = u ? '시작하기 →' : '🔒 잠겨 있어요';
         card.setAttribute('aria-label', card.dataset.name + (u ? '' : ' (잠김)'));
       });
-      unlockBtn.textContent = u ? '🔓' : '🔒';
-      unlockBtn.title = u ? '다시 잠그기' : '잠금 해제';
+      lockMenu.querySelectorAll('input[data-key]').forEach(inp => {
+        inp.checked = isOpen(inp.dataset.key);
+        inp.closest('.lm-row').querySelector('.lm-state').textContent = inp.checked ? '열림' : '잠김';
+      });
+      const any = KEYS.some(isOpen);
+      unlockBtn.textContent = any ? '🔓' : '🔒';
+      unlockBtn.title = (allOpen() ? '모두 잠그기' : '모두 풀기') + ' (오른쪽 클릭: 하나씩 조절)';
       unlockBtn.setAttribute('aria-label', unlockBtn.title);
     }
 
     async function openCard(card) {
-      if (!isUnlocked()) {
+      if (!isOpen(card.dataset.key)) {
         showToast('🔒 ' + card.dataset.name + ' 수집기는 아직 잠겨 있어요.');
         return;
       }
@@ -275,11 +366,39 @@
       card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openCard(card); } });
     });
 
+    // 왼쪽 클릭: 모두 풀기 / 모두 잠그기
     unlockBtn.addEventListener('click', () => {
-      const next = !isUnlocked();
-      setUnlocked(next);
-      showToast(next ? '🔓 음성·텍스트 잠금을 풀었어요.' : '🔒 다시 잠갔어요.');
+      const next = !allOpen();
+      setAll(next);
+      showToast(next ? '🔓 모두 잠금을 풀었어요.' : '🔒 모두 잠갔어요.');
     });
+
+    // 오른쪽 클릭: 항목별로 조절하는 메뉴
+    function openMenu() {
+      lockMenu.hidden = false;
+      const r = unlockBtn.getBoundingClientRect();
+      const w = lockMenu.offsetWidth, h = lockMenu.offsetHeight;
+      const left = Math.min(Math.max(8, r.left + r.width / 2 - w / 2), window.innerWidth - w - 8);
+      const top = r.top - h - 8 >= 8 ? r.top - h - 8 : r.bottom + 8;
+      lockMenu.style.left = left + 'px';
+      lockMenu.style.top = top + 'px';
+      lockMenu.querySelector('input').focus();
+    }
+    function closeMenu() { lockMenu.hidden = true; }
+
+    unlockBtn.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      lockMenu.hidden ? openMenu() : closeMenu();
+    });
+    lockMenu.querySelectorAll('input[data-key]').forEach(inp =>
+      inp.addEventListener('change', () => setOpen(inp.dataset.key, inp.checked)));
+    lockMenu.querySelectorAll('[data-all]').forEach(b =>
+      b.addEventListener('click', () => setAll(b.dataset.all === '1')));
+    document.addEventListener('mousedown', (e) => {
+      if (!lockMenu.hidden && !lockMenu.contains(e.target) && e.target !== unlockBtn) closeMenu();
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(); });
+    window.addEventListener('resize', closeMenu);
 
     renderLocks();
   </script>
