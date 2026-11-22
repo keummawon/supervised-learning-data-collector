@@ -130,6 +130,20 @@
     .card.soon h2, .card.soon p { color: #94a3b8; }
 
     footer { text-align: center; padding: 20px; color: var(--sub); font-size: 13px; }
+    .unlock-btn {
+      font: inherit;
+      font-size: 13px;
+      background: none;
+      border: none;
+      border-radius: 6px;
+      padding: 2px 5px;
+      margin-left: 2px;
+      cursor: pointer;
+      opacity: .55;
+      transition: opacity .15s, background .15s;
+    }
+    .unlock-btn:hover, .unlock-btn:focus-visible { opacity: 1; background: var(--blue-weak); outline: none; }
+    .lock[hidden] { display: none; }
 
     .toast {
       position: fixed;
@@ -178,7 +192,7 @@
         <span class="go">시작하기 →</span>
       </a>
 
-      <div class="card soon" role="button" tabindex="0" data-name="음성" aria-label="음성 (잠김)">
+      <div class="card soon lockable" role="button" tabindex="0" data-name="음성" data-href="voice.html" aria-label="음성 (잠김)">
         <span class="lock" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
         <div class="icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v5"/></svg>
@@ -188,7 +202,7 @@
         <span class="go">🔒 잠겨 있어요</span>
       </div>
 
-      <div class="card soon" role="button" tabindex="0" data-name="텍스트" aria-label="텍스트 (잠김)">
+      <div class="card soon lockable" role="button" tabindex="0" data-name="텍스트" data-href="text.html" aria-label="텍스트 (잠김)">
         <span class="lock" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
         <div class="icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>
@@ -200,7 +214,10 @@
     </section>
   </main>
 
-  <footer>사진과 데이터는 내 컴퓨터에만 저장돼요.</footer>
+  <footer>
+    사진과 데이터는 내 컴퓨터에만 저장돼요.
+    <button class="unlock-btn" id="unlockBtn" title="잠금 해제" aria-label="잠금 해제">🔒</button>
+  </footer>
 
   <div class="toast" id="toast"></div>
 
@@ -213,11 +230,58 @@
       clearTimeout(toastTimer);
       toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
     }
-    document.querySelectorAll('.card.soon').forEach(card => {
-      const tell = () => showToast('🔒 ' + card.dataset.name + ' 수집기는 아직 잠겨 있어요.');
-      card.addEventListener('click', tell);
-      card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tell(); } });
+    // ===== 잠금 / 잠금 해제 (이 브라우저에 기억) =====
+    const KEY = 'sl-collector-unlocked';
+    const unlockBtn = document.getElementById('unlockBtn');
+
+    function isUnlocked() {
+      try { return localStorage.getItem(KEY) === '1'; } catch (e) { return unlockedMemo; }
+    }
+    let unlockedMemo = false;   // 저장소를 못 쓰는 브라우저용
+    function setUnlocked(v) {
+      unlockedMemo = v;
+      try { v ? localStorage.setItem(KEY, '1') : localStorage.removeItem(KEY); } catch (e) { /* 이번 화면에서만 적용 */ }
+      renderLocks();
+    }
+
+    function renderLocks() {
+      const u = isUnlocked();
+      document.querySelectorAll('.card.lockable').forEach(card => {
+        card.classList.toggle('soon', !u);
+        card.querySelector('.lock').hidden = u;
+        card.querySelector('.go').textContent = u ? '시작하기 →' : '🔒 잠겨 있어요';
+        card.setAttribute('aria-label', card.dataset.name + (u ? '' : ' (잠김)'));
+      });
+      unlockBtn.textContent = u ? '🔓' : '🔒';
+      unlockBtn.title = u ? '다시 잠그기' : '잠금 해제';
+      unlockBtn.setAttribute('aria-label', unlockBtn.title);
+    }
+
+    async function openCard(card) {
+      if (!isUnlocked()) {
+        showToast('🔒 ' + card.dataset.name + ' 수집기는 아직 잠겨 있어요.');
+        return;
+      }
+      // 페이지가 있으면 이동, 아직 없으면 안내
+      try {
+        const r = await fetch(card.dataset.href, { method: 'HEAD', cache: 'no-store' });
+        if (r.ok) { location.href = card.dataset.href; return; }
+      } catch (e) { /* 아래 안내 */ }
+      showToast(card.dataset.name + ' 수집기 페이지는 아직 만들지 않았어요.');
+    }
+
+    document.querySelectorAll('.card.lockable').forEach(card => {
+      card.addEventListener('click', () => openCard(card));
+      card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openCard(card); } });
     });
+
+    unlockBtn.addEventListener('click', () => {
+      const next = !isUnlocked();
+      setUnlocked(next);
+      showToast(next ? '🔓 음성·텍스트 잠금을 풀었어요.' : '🔒 다시 잠갔어요.');
+    });
+
+    renderLocks();
   </script>
 </body>
 </html>
