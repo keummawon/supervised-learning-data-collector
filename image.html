@@ -130,23 +130,54 @@
     }
     input:focus, select:focus { outline: 2px solid var(--blue); border-color: transparent; }
 
-    /* 다운로드 전 안내 */
-    .check-note {
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
-      padding: 14px 18px;
-      background: var(--blue-weak);
-      border: 1px solid #bfd3fb;
-      border-left: 5px solid var(--blue);
-      border-radius: 12px;
-      color: #1e3a8a;
-      font-size: 14px;
-      line-height: 1.6;
+    /* 다운로드 전 경고창 */
+    .modal-back {
+      position: fixed;
+      inset: 0;
+      z-index: 900;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      background: rgba(15, 23, 42, .45);
     }
-    .check-note[hidden] { display: none; }
-    .check-note .cn-icon { font-size: 20px; line-height: 1.3; }
-    .check-note b:first-child { display: block; color: var(--blue); font-size: 15px; }
+    .modal-back[hidden] { display: none; }
+    .modal {
+      width: min(100%, 440px);
+      padding: 26px 26px 22px;
+      background: #fff;
+      border-radius: 18px;
+      border-top: 6px solid var(--blue);
+      box-shadow: 0 24px 60px rgba(15, 23, 42, .3);
+      font-size: 15px;
+      line-height: 1.6;
+      animation: pop .18s ease-out;
+    }
+    @keyframes pop { from { transform: scale(.94); opacity: 0; } to { transform: none; opacity: 1; } }
+    .modal-icon {
+      width: 52px;
+      height: 52px;
+      margin: 0 auto 10px;
+      border-radius: 50%;
+      background: var(--blue-weak);
+      display: grid;
+      place-items: center;
+      font-size: 26px;
+    }
+    .modal h2 { margin: 0 0 12px; font-size: 20px; text-align: center; color: var(--blue); }
+    .modal p { margin: 0 0 8px; }
+    .modal ul { margin: 0 0 10px; padding-left: 20px; color: var(--text); }
+    .modal li { margin: 2px 0; }
+    .modal-sub { color: var(--sub); font-size: 14px; }
+    .modal-sum {
+      margin-top: 10px !important;
+      padding: 8px 12px;
+      background: var(--soft);
+      border-radius: 10px;
+      font-size: 13px;
+      color: var(--sub);
+    }
+    .modal-actions { display: flex; gap: 8px; margin-top: 18px; }
+    .modal-actions button { flex: 1; }
 
     /* 클래스/범주 한 줄 */
     .class-row {
@@ -369,20 +400,32 @@
       <span class="badge" id="totalBadge">클래스/범주 1개 · 총 0장</span>
     </div>
 
-    <!-- 사진을 찍으면 나타나는 다운로드 전 안내 -->
-    <div class="check-note" id="checkNote" hidden>
-      <span class="cn-icon">💡</span>
-      <div>
-        <b>다운로드 전에 확인하세요!</b>
-        각 클래스/범주의 <b>특징·패턴을 잘 나타내는 사진</b>인지 살펴보세요.
-        흐리거나, 대상이 잘 안 보이거나, 다른 클래스/범주와 헷갈리는 사진은 <b>🗑 삭제</b>한 뒤 다운로드하면 더 좋은 인공지능을 만들 수 있어요.
-      </div>
-    </div>
-
     <div id="rows"></div>
 
     <button id="addRowBtn">＋ 클래스/범주 추가</button>
   </main>
+
+  <!-- 다운로드 전 경고창 -->
+  <div class="modal-back" id="checkModal" hidden>
+    <div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="checkTitle" aria-describedby="checkBody">
+      <div class="modal-icon">⚠️</div>
+      <h2 id="checkTitle">다운로드 전에 확인하세요!</h2>
+      <div id="checkBody">
+        <p>각 클래스/범주의 <b>특징·패턴을 잘 나타내는 사진</b>인지 확인하세요.</p>
+        <ul>
+          <li>흐리거나 흔들린 사진</li>
+          <li>대상이 잘 안 보이거나 잘린 사진</li>
+          <li>다른 클래스/범주와 헷갈리는 사진</li>
+        </ul>
+        <p class="modal-sub">이런 사진은 🗑 삭제한 뒤 다운로드하면 더 좋은 인공지능을 만들 수 있어요.</p>
+        <p class="modal-sum" id="checkSum"></p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-outline" id="checkBack">다시 확인할게요</button>
+        <button class="btn-primary" id="checkOk">확인했어요, 다운로드</button>
+      </div>
+    </div>
+  </div>
 
   <div class="toast" id="toast"></div>
 
@@ -496,7 +539,6 @@
 
     function renderTotal() {
       $('totalBadge').textContent = '클래스/범주 ' + classes.length + '개 · 총 ' + totalCount() + '장';
-      $('checkNote').hidden = totalCount() === 0;
       updateDownloadBtn();
     }
 
@@ -824,6 +866,11 @@
       const names = targets.map(c => safeName(c.name));
       const dup = names.find((n, i) => names.indexOf(n) !== i);
       if (dup) { showToast('클래스/범주 이름 "' + dup + '"이(가) 겹쳐요. 이름을 다르게 바꿔 주세요.'); return; }
+      if (FS_OK && !saveDir) { showToast('먼저 위쪽의 "저장 폴더 연결" 버튼을 눌러 주세요.'); return; }
+
+      // 다운로드 전 경고창: 특징·패턴을 잘 나타내는 사진인지 확인
+      $('checkSum').textContent = '저장할 사진: ' + targets.map((c, k) => names[k] + ' ' + c.images.length + '장').join(' · ');
+      if (!(await askCheck())) return;
 
       const start0 = startNum();
       const total = totalCount();
@@ -927,6 +974,30 @@
         btn.textContent = '⬇ 다운로드';
         updateDownloadBtn();
       }
+    }
+
+    // 경고창 열기 → "확인했어요"면 true, "다시 확인할게요"/Esc/바깥 클릭이면 false
+    function askCheck() {
+      const back = $('checkModal');
+      $('toast').classList.remove('show');
+      back.hidden = false;
+      $('checkOk').focus();
+      return new Promise(resolve => {
+        const done = (ok) => {
+          back.hidden = true;
+          $('checkOk').onclick = $('checkBack').onclick = back.onclick = null;
+          document.removeEventListener('keydown', onKey, true);
+          if (!ok) showToast('사진을 다시 살펴보고 다운로드해 주세요.');
+          resolve(ok);
+        };
+        const onKey = (e) => {
+          if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(false); }
+        };
+        $('checkOk').onclick = () => done(true);
+        $('checkBack').onclick = () => done(false);
+        back.onclick = (e) => { if (e.target === back) done(false); };
+        document.addEventListener('keydown', onKey, true);
+      });
     }
 
     $('downloadBtn').addEventListener('click', saveAll);
