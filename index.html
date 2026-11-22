@@ -2,1109 +2,218 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>인공지능 이미지 데이터 수집</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>지도학습 데이터 수집기</title>
   <style>
     :root {
-      --bg: #f1f3f4;
+      --bg: #f5f8fd;
       --card: #ffffff;
-      --line: #dadce0;
-      --text: #202124;
-      --sub: #5f6368;
-      --blue: #1a73e8;
-      --blue-weak: #e8f0fe;
-      --red: #d93025;
-      --green: #188038;
+      --line: #e2e8f0;
+      --text: #1e293b;
+      --sub: #64748b;
+      --blue: #2563eb;
+      --blue-dark: #1d4ed8;
+      --blue-weak: #eef4ff;
     }
     * { box-sizing: border-box; }
     body {
+      margin: 0;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
-      height: 100vh;
-      margin: 0;
       font-family: "Pretendard", "Noto Sans KR", "Malgun Gothic", sans-serif;
-      background: var(--bg);
+      background:
+        radial-gradient(1200px 500px at 50% -200px, #dbe7ff 0%, rgba(219, 231, 255, 0) 70%),
+        var(--bg);
       color: var(--text);
     }
     header {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 14px 24px;
-      background: var(--card);
-      border-bottom: 1px solid var(--line);
+      gap: 10px;
+      padding: 18px 28px;
+      font-weight: 700;
+      font-size: 16px;
     }
-    header h1 { margin: 0; font-size: 20px; }
-    .header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    .save-loc { font-size: 13px; color: var(--sub); margin-right: 4px; }
-    .save-loc[hidden], .btn-folder[hidden] { display: none; }
-    .btn-folder {
-      background: #fbbc04;
-      color: #202124;
-      animation: pulse 1.6s ease-in-out infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(251, 188, 4, .6); }
-      50% { box-shadow: 0 0 0 6px rgba(251, 188, 4, 0); }
-    }
-    .save-loc b { color: var(--text); }
-    .link-btn {
-      background: none;
-      color: var(--blue);
-      padding: 2px 4px;
-      font-size: 13px;
-      text-decoration: underline;
-    }
-
-    button {
-      font: inherit;
-      border: none;
-      border-radius: 8px;
-      padding: 10px 16px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-    button:disabled { opacity: .45; cursor: not-allowed; }
-    .btn-primary { background: var(--blue); color: #fff; }
-    .btn-outline { background: #fff; color: var(--blue); border: 1px solid var(--line); }
-    .btn-danger { background: var(--red); color: #fff; }
-    .btn-danger-outline { background: #fff; color: var(--red); border: 1px solid var(--line); }
-
-    main {
+    header .logo {
+      width: 30px;
+      height: 30px;
+      border-radius: 9px;
+      background: var(--blue);
+      color: #fff;
       display: grid;
-      grid-template-columns: 1fr 1.2fr 1fr;
-      gap: 16px;
-      padding: 16px 24px;
-      flex: 1;
-      min-height: 0;
+      place-items: center;
+      font-size: 15px;
     }
-    .panel {
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 16px;
+    main {
+      flex: 1;
+      width: 100%;
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 48px 24px 64px;
+    }
+    .hero { text-align: center; margin-bottom: 44px; }
+    .hero .eyebrow {
+      display: inline-block;
+      padding: 5px 12px;
+      border-radius: 999px;
+      background: var(--blue-weak);
+      color: var(--blue);
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+    .hero h1 { margin: 0 0 12px; font-size: clamp(28px, 5vw, 40px); letter-spacing: -0.02em; }
+    .hero p { margin: 0; color: var(--sub); font-size: 16px; line-height: 1.6; }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .card {
+      position: relative;
       display: flex;
       flex-direction: column;
-      min-height: 0;
+      gap: 12px;
+      padding: 28px 24px 24px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      color: inherit;
+      text-decoration: none;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, .05);
+      transition: transform .15s, box-shadow .15s, border-color .15s;
+      cursor: pointer;
     }
-    .panel h2 {
-      margin: 0 0 12px;
-      font-size: 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    .card:hover, .card:focus-visible {
+      transform: translateY(-3px);
+      border-color: #bfd3fb;
+      box-shadow: 0 12px 28px rgba(37, 99, 235, .12);
+      outline: none;
     }
-    .badge {
+    .card .icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
       background: var(--blue-weak);
       color: var(--blue);
-      font-size: 13px;
+      display: grid;
+      place-items: center;
+    }
+    .card .icon svg { width: 28px; height: 28px; }
+    .card h2 { margin: 4px 0 0; font-size: 21px; }
+    .card p { margin: 0; color: var(--sub); font-size: 14px; line-height: 1.6; flex: 1; }
+    .card .go {
+      margin-top: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--blue);
+    }
+    .card.soon { cursor: default; }
+    .card.soon .icon { background: #f1f5f9; color: #94a3b8; }
+    .card.soon .go { color: #94a3b8; }
+    .card.soon:hover { transform: none; box-shadow: 0 1px 3px rgba(15, 23, 42, .05); border-color: var(--line); }
+    .tag {
+      position: absolute;
+      top: 18px;
+      right: 18px;
       padding: 3px 10px;
       border-radius: 999px;
-    }
-
-    /* 왼쪽: 미리보기 */
-    .preview-box {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #f8f9fa;
-      border: 1px dashed var(--line);
-      border-radius: 10px;
-      overflow: hidden;
-      min-height: 200px;
-    }
-    .preview-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
-    .empty-msg { color: var(--sub); font-size: 14px; text-align: center; line-height: 1.6; }
-    .preview-controls {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      margin-top: 12px;
-    }
-    .preview-info { font-size: 14px; color: var(--sub); }
-    .hint { font-size: 12px; color: var(--sub); margin-top: 8px; }
-
-    /* 가운데: 썸네일 */
-    .gallery {
-      flex: 1;
-      overflow-y: auto;
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-      gap: 8px;
-      align-content: start;
-      padding: 2px;
-    }
-    .thumb {
-      position: relative;
-      aspect-ratio: 1;
-      border-radius: 8px;
-      overflow: hidden;
-      cursor: pointer;
-      border: 3px solid transparent;
-      background: #eee;
-    }
-    .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .thumb.selected { border-color: var(--blue); }
-    .thumb .num, .crop .num {
-      position: absolute;
-      left: 4px;
-      bottom: 4px;
-      background: rgba(0,0,0,.6);
-      color: #fff;
-      font-size: 11px;
-      padding: 1px 6px;
-      border-radius: 6px;
-    }
-    .gallery-empty { grid-column: 1 / -1; padding: 40px 0; }
-
-    /* 오른쪽: 웹캠 */
-    label.field { font-size: 14px; font-weight: 600; display: block; margin-bottom: 6px; }
-    input[type="text"], select {
-      width: 100%;
-      font: inherit;
-      padding: 10px 12px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      margin-bottom: 14px;
-    }
-    input[type="text"]:focus { outline: 2px solid var(--blue); border-color: transparent; }
-    .cam-box {
-      position: relative;
-      aspect-ratio: 1;
-      width: 100%;
-      background: #202124;
-      border-radius: 10px;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .cam-box video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: none;
-    }
-    .cam-box video.mirror { transform: scaleX(-1); }
-    .cam-off-msg { color: #bdc1c6; font-size: 14px; }
-    .flash {
-      position: absolute; inset: 0;
-      background: #fff; opacity: 0;
-      pointer-events: none;
-      transition: opacity .15s;
-    }
-    .cam-row { display: flex; gap: 8px; margin-top: 12px; }
-    .cam-row button { flex: 1; }
-    .cam-guide {
-      margin-top: 10px;
-      padding: 8px 12px;
-      background: var(--blue-weak);
-      color: var(--blue);
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 600;
-    }
-    #captureBtn { user-select: none; touch-action: none; }
-    #captureBtn.recording { background: var(--green); }
-    .options { display: flex; gap: 12px; align-items: center; margin-top: 12px; font-size: 13px; color: var(--sub); }
-    .options select { width: auto; margin: 0; padding: 6px 8px; font-size: 13px; }
-    .options label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
-    .options { flex-wrap: wrap; }
-    .options input.start-in { width: 72px; margin: 0; padding: 6px 8px; font-size: 13px; }
-
-    /* 탭 */
-    .header-left { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-    .tabs { display: flex; gap: 4px; background: var(--bg); padding: 4px; border-radius: 10px; }
-    .tab { background: none; color: var(--sub); padding: 8px 14px; }
-    .tab.active { background: #fff; color: var(--blue); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
-    main[hidden], .cam-only[hidden], .split-only[hidden], canvas[hidden], .empty-msg[hidden] { display: none; }
-
-    /* 사진 나누기 탭 */
-    #tab-split { grid-template-columns: 320px 1fr; }
-    .panel-split-set { overflow-y: auto; }
-    .drop {
-      border: 2px dashed var(--line);
-      border-radius: 10px;
-      padding: 22px 12px;
-      text-align: center;
+      background: #f1f5f9;
       color: var(--sub);
-      font-size: 14px;
-      line-height: 1.6;
-      cursor: pointer;
-      margin-bottom: 14px;
+      font-size: 12px;
+      font-weight: 700;
     }
-    .drop:hover, .drop.over { border-color: var(--blue); background: var(--blue-weak); color: var(--blue); }
-    .row2 { display: flex; gap: 8px; }
-    .row2 > div { flex: 1; }
-    input[type="number"] {
-      width: 100%;
-      font: inherit;
-      padding: 10px 12px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      margin-bottom: 10px;
-    }
-    #detectBtn { margin-bottom: 14px; }
-    input[type="range"] { width: 100%; margin: 0 0 6px; }
-    .split-preview { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
-    #gridCanvas { max-width: 100%; max-height: 42vh; align-self: center; border-radius: 8px; }
-    .crops { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; }
-    .crop {
-      position: relative;
-      cursor: pointer;
-      border-radius: 8px;
-      overflow: hidden;
-      border: 3px solid var(--blue);
-      background: #eee;
-    }
-    .crop.off { border-color: var(--red); opacity: .4; }
-    .crop img { width: 100%; display: block; }
+
+    footer { text-align: center; padding: 20px; color: var(--sub); font-size: 13px; }
 
     .toast {
       position: fixed;
       left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-      max-width: min(90vw, 520px);
-      background: rgba(32, 33, 36, .92);
+      bottom: 32px;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, .92);
       color: #fff;
-      padding: 18px 28px;
+      padding: 12px 20px;
       border-radius: 12px;
-      font-size: 16px;
+      font-size: 14px;
       font-weight: 600;
-      line-height: 1.5;
-      text-align: center;
-      box-shadow: 0 8px 24px rgba(0,0,0,.25);
-      z-index: 1000;
       opacity: 0;
       transition: opacity .2s;
       pointer-events: none;
     }
     .toast.show { opacity: 1; }
 
-    @media (max-width: 900px) {
-      body { height: auto; }
-      main { grid-template-columns: 1fr; }
-      .panel-cam { order: 1; }
-      .panel-gallery { order: 2; }
-      .panel-preview { order: 3; }
-      .gallery { max-height: 360px; }
-      .preview-box { min-height: 260px; }
-      #tab-split { grid-template-columns: 1fr; }
-      #gridCanvas { max-height: none; }
-      header { flex-wrap: wrap; padding: 12px 16px; }
-      main { padding: 12px 16px; }
+    @media (max-width: 760px) {
+      main { padding: 28px 16px 48px; }
+      header { padding: 14px 16px; }
+      .cards { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
   <header>
-    <div class="header-left">
-      <h1>인공지능 이미지 데이터 수집</h1>
-      <nav class="tabs">
-        <button class="tab active" data-tab="cam">📷 웹캠 촬영</button>
-        <button class="tab" data-tab="split">✂ 사진 나누기</button>
-      </nav>
-    </div>
-    <div class="header-actions">
-      <button class="btn-folder" id="connectBtn" hidden>📁 저장 폴더 연결</button>
-      <span class="save-loc" id="folderStatus" hidden>
-        ✅ 저장 폴더: <b id="folderName"></b>
-        <button class="link-btn" id="changeLocBtn">변경</button>
-      </span>
-      <button class="btn-primary cam-only" id="downloadBtn" disabled>⬇ 다운로드</button>
-      <button class="btn-danger-outline cam-only" id="resetBtn">↺ 리셋</button>
-      <button class="btn-primary split-only" id="splitSaveBtn" disabled hidden>⬇ 폴더에 저장</button>
-      <button class="btn-danger-outline split-only" id="splitResetBtn" hidden>↺ 리셋</button>
-    </div>
+    <span class="logo">AI</span>
+    지도학습 데이터 수집기
   </header>
 
-  <main id="tab-cam">
-    <!-- 왼쪽: 웹캠 -->
-    <section class="panel panel-cam">
-      <h2>웹캠</h2>
-      <label class="field" for="className">범주/클래스 이름</label>
-      <input type="text" id="className" placeholder="예: 사과, 가위, 마스크 착용" maxlength="40">
-
-      <div class="cam-box">
-        <video id="video" class="mirror" autoplay playsinline muted></video>
-        <div class="cam-off-msg" id="camOffMsg">카메라가 꺼져 있어요</div>
-        <div class="flash" id="flash"></div>
-      </div>
-
-      <div class="cam-row">
-        <button class="btn-outline" id="camBtn">카메라 켜기</button>
-        <button class="btn-primary" id="captureBtn" disabled>사진 찍기</button>
-      </div>
-      <div class="cam-guide">📌 카메라 켜기 버튼을 누르고 '허용'을 눌러 주세요.</div>
-      <div class="options">
-        <label>크기
-          <select id="sizeSel">
-            <option value="224" selected>224px</option>
-            <option value="400">400px</option>
-            <option value="640">640px</option>
-          </select>
-        </label>
-        <label><input type="checkbox" id="mirrorChk" checked> 좌우 반전</label>
-        <label>시작 번호 <input type="number" class="start-in" id="camStart" min="1" value="1"></label>
-      </div>
-      <div class="hint">버튼을 한 번 누르면 1장, 길게 누르고 있으면 연속으로 찍혀요.</div>
+  <main>
+    <section class="hero">
+      <span class="eyebrow">Supervised Learning Data</span>
+      <h1>어떤 데이터를 모을까요?</h1>
+      <p>인공지능에게 가르칠 데이터를 클래스별로 모아요.<br>수집할 데이터 종류를 골라 주세요.</p>
     </section>
 
-    <!-- 가운데: 썸네일 목록 -->
-    <section class="panel panel-gallery">
-      <h2>찍은 사진 <span class="badge" id="countBadge">0장</span></h2>
-      <div class="gallery" id="gallery">
-        <div class="empty-msg gallery-empty">아직 찍은 사진이 없어요.</div>
-      </div>
-    </section>
+    <section class="cards">
+      <a class="card" href="image.html">
+        <div class="icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.5-4.5L6 21"/></svg>
+        </div>
+        <h2>이미지</h2>
+        <p>웹캠으로 사진을 찍어 클래스 이름 폴더에 1.jpg, 2.jpg … 로 저장해요.</p>
+        <span class="go">시작하기 →</span>
+      </a>
 
-    <!-- 오른쪽: 선택한 사진 보기 -->
-    <section class="panel panel-preview">
-      <h2>사진 확인 <span class="preview-info" id="previewInfo"></span></h2>
-      <div class="preview-box" id="previewBox">
-        <div class="empty-msg">가운데에서 사진을 클릭하면<br>여기에서 크게 볼 수 있어요.</div>
+      <div class="card soon" role="button" tabindex="0" data-name="음성">
+        <span class="tag">준비 중</span>
+        <div class="icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v5"/></svg>
+        </div>
+        <h2>음성</h2>
+        <p>마이크로 소리를 녹음해 클래스별로 모아요.</p>
+        <span class="go">곧 열려요</span>
       </div>
-      <div class="preview-controls">
-        <button class="btn-outline" id="prevBtn" disabled>◀ 이전</button>
-        <button class="btn-danger" id="deleteBtn" disabled>🗑 삭제</button>
-        <button class="btn-outline" id="nextBtn" disabled>다음 ▶</button>
+
+      <div class="card soon" role="button" tabindex="0" data-name="텍스트">
+        <span class="tag">준비 중</span>
+        <div class="icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>
+        </div>
+        <h2>텍스트</h2>
+        <p>문장을 입력해 클래스(감정, 주제 등)별로 모아요.</p>
+        <span class="go">곧 열려요</span>
       </div>
-      <div class="hint">키보드: ← → 이동, Delete 키 삭제</div>
     </section>
   </main>
 
-  <!-- 사진 나누기 탭: 여러 장이 모인 사진을 칸별로 잘라 저장 -->
-  <main id="tab-split" hidden>
-    <section class="panel panel-split-set">
-      <h2>사진 넣기</h2>
-      <div class="drop" id="drop">🖼 여기로 사진을 끌어오거나<br>클릭해서 고르세요<br><small>복사한 사진은 Ctrl+V로 붙여넣기</small></div>
-      <input type="file" id="fileIn" accept="image/*" hidden>
-
-      <label class="field" for="splitName">범주/클래스 이름</label>
-      <input type="text" id="splitName" placeholder="예: 홍길동, 웃는 얼굴" maxlength="40">
-
-      <div class="row2">
-        <div>
-          <label class="field" for="rowsIn">가로줄 수</label>
-          <input type="number" id="rowsIn" min="1" max="20" value="4">
-        </div>
-        <div>
-          <label class="field" for="colsIn">한 줄에 몇 장</label>
-          <input type="number" id="colsIn" min="1" max="20" value="5">
-        </div>
-      </div>
-      <button class="btn-outline" id="detectBtn" disabled>🔍 칸 자동으로 찾기</button>
-
-      <label class="field" for="trimIn">가장자리 잘라내기: <span id="trimVal">6</span>%</label>
-      <input type="range" id="trimIn" min="0" max="25" value="6">
-      <div class="options">
-        <label>크기
-          <select id="splitSize">
-            <option value="224" selected>224px</option>
-            <option value="400">400px</option>
-            <option value="640">640px</option>
-            <option value="orig">원본</option>
-          </select>
-        </label>
-        <label><input type="checkbox" id="squareChk" checked> 정사각형</label>
-        <label>시작 번호 <input type="number" class="start-in" id="splitStart" min="1" value="1"></label>
-      </div>
-      <div class="hint">사진 위의 숫자나 테두리가 보이면 '가장자리 잘라내기'를 늘려 주세요.<br>아래 사진을 클릭하면 저장에서 빠져요.</div>
-    </section>
-
-    <section class="panel">
-      <h2>자른 결과 <span class="badge" id="splitBadge">0장</span></h2>
-      <div class="split-preview">
-        <div class="empty-msg" id="splitEmpty" style="padding:60px 0">왼쪽에 여러 장이 모인 사진을 넣으면<br>칸마다 잘라서 여기에 보여 줘요.</div>
-        <canvas id="gridCanvas" hidden></canvas>
-        <div class="crops" id="crops"></div>
-      </div>
-    </section>
-  </main>
+  <footer>사진과 데이터는 내 컴퓨터에만 저장돼요.</footer>
 
   <div class="toast" id="toast"></div>
 
   <script>
-    // ===== 상태 =====
-    let images = [];        // { id, dataUrl }
-    let selectedIdx = -1;
-    let stream = null;
-    let nextId = 1;
-    let holdTimer = null, burstTimer = null;
-
-    // ===== 요소 =====
-    const $ = (id) => document.getElementById(id);
-    const video = $('video');
-    const camBtn = $('camBtn');
-    const captureBtn = $('captureBtn');
-    const gallery = $('gallery');
-    const previewBox = $('previewBox');
-
-    // ===== 탭 전환 =====
-    let currentTab = 'cam';
-    document.querySelectorAll('.tab').forEach(tab => tab.addEventListener('click', () => {
-      currentTab = tab.dataset.tab;
-      document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t === tab));
-      $('tab-cam').hidden = currentTab !== 'cam';
-      $('tab-split').hidden = currentTab !== 'split';
-      document.querySelectorAll('.cam-only').forEach(el => el.hidden = currentTab !== 'cam');
-      document.querySelectorAll('.split-only').forEach(el => el.hidden = currentTab !== 'split');
-    }));
-
-    // ===== 사진 나누기 =====
-    let srcImg = null, srcUrl = null;
-    let detected = null;            // 자동으로 찾은 칸 경계 { xs: [[x0,x1]...], ys: [[y0,y1]...] }
-    let cropUrls = [];              // 잘라낸 사진들
-    const excluded = new Set();     // 저장에서 뺄 칸 번호
-    const gridCanvas = $('gridCanvas');
-
-    function keptCrops() { return cropUrls.filter((_, i) => !excluded.has(i)); }
-
-    function loadSplitFile(file) {
-      if (!file || !file.type.startsWith('image/')) { showToast('이미지 파일을 골라 주세요.'); return; }
-      const url = URL.createObjectURL(file);
-      const img = new Image();
-      img.onload = () => {
-        if (srcUrl) URL.revokeObjectURL(srcUrl);
-        srcImg = img;
-        srcUrl = url;
-        excluded.clear();
-        $('detectBtn').disabled = false;
-        if (autoDetect()) showToast($('rowsIn').value + '줄 × ' + $('colsIn').value + '장으로 나눴어요.');
-        else showToast('칸을 자동으로 찾지 못했어요. 가로줄 수와 한 줄에 몇 장인지 직접 맞춰 주세요.');
-        renderSplit();
-      };
-      img.onerror = () => { URL.revokeObjectURL(url); showToast('이 사진을 열 수 없어요.'); };
-      img.src = url;
-    }
-
-    // 사진 사이의 흰 구분선을 찾아 칸을 나눔
-    function autoDetect() {
-      const W = srcImg.naturalWidth, H = srcImg.naturalHeight;
-      const s = Math.min(1, 800 / Math.max(W, H));
-      const w = Math.max(1, Math.round(W * s)), h = Math.max(1, Math.round(H * s));
-      const c = document.createElement('canvas');
-      c.width = w; c.height = h;
-      const cx = c.getContext('2d', { willReadFrequently: true });
-      cx.drawImage(srcImg, 0, 0, w, h);
-      const d = cx.getImageData(0, 0, w, h).data;
-      const colP = new Float32Array(w), rowP = new Float32Array(h);
-      for (let y = 0; y < h; y++) {
-        for (let x = 0; x < w; x++) {
-          const i = (y * w + x) * 4;
-          if (d[i] > 225 && d[i + 1] > 225 && d[i + 2] > 225) { colP[x]++; rowP[y]++; }
-        }
-      }
-      for (let x = 0; x < w; x++) colP[x] /= h;
-      for (let y = 0; y < h; y++) rowP[y] /= w;
-      const xs = bands(colP, w), ys = bands(rowP, h);
-      if (xs.length * ys.length < 2 || xs.length > 20 || ys.length > 20) { detected = null; return false; }
-      detected = {
-        xs: xs.map(([a, b]) => [a / s, b / s]),
-        ys: ys.map(([a, b]) => [a / s, b / s])
-      };
-      $('rowsIn').value = ys.length;
-      $('colsIn').value = xs.length;
-      return true;
-    }
-
-    // 거의 전부 밝은 줄 = 구분선, 그 사이 구간 = 사진 칸
-    function bands(p, len) {
-      const out = [];
-      let prev = 0, start = -1;
-      for (let i = 0; i <= len; i++) {
-        const line = i < len && p[i] > 0.9;
-        if (line && start < 0) start = i;
-        if (!line && start >= 0) {
-          if (start - prev > len * 0.04) out.push([prev, start]);
-          prev = i;
-          start = -1;
-        }
-      }
-      if (len - prev > len * 0.04) out.push([prev, len]);
-      return out;
-    }
-
-    function clampInt(v, min, max) {
-      v = parseInt(v, 10);
-      return isNaN(v) ? min : Math.max(min, Math.min(max, v));
-    }
-
-    // 저장 시작 번호 (1 이상)
-    function startNum(input) { return clampInt(input.value, 1, 999999); }
-
-    function cellRects() {
-      const W = srcImg.naturalWidth, H = srcImg.naturalHeight;
-      let xs, ys;
-      if (detected) {
-        ({ xs, ys } = detected);
-      } else {
-        const r = clampInt($('rowsIn').value, 1, 20), c = clampInt($('colsIn').value, 1, 20);
-        xs = Array.from({ length: c }, (_, i) => [i * W / c, (i + 1) * W / c]);
-        ys = Array.from({ length: r }, (_, i) => [i * H / r, (i + 1) * H / r]);
-      }
-      const rects = [];
-      ys.forEach(([y0, y1]) => xs.forEach(([x0, x1]) => rects.push({ x: x0, y: y0, w: x1 - x0, h: y1 - y0 })));
-      return rects;
-    }
-
-    // 가장자리를 잘라내고, 필요하면 가운데를 정사각형으로
-    function cropRect(r) {
-      const t = parseInt($('trimIn').value, 10) / 100;
-      let x = r.x + r.w * t, y = r.y + r.h * t, w = r.w * (1 - 2 * t), h = r.h * (1 - 2 * t);
-      if ($('squareChk').checked) {
-        const side = Math.min(w, h);
-        x += (w - side) / 2;
-        y += (h - side) / 2;
-        w = h = side;
-      }
-      return { x, y, w, h };
-    }
-
-    function renderSplit() {
-      if (!srcImg) return;
-      const rects = cellRects().map(cropRect);
-
-      // 원본 위에 자를 칸 표시
-      const W = srcImg.naturalWidth, H = srcImg.naturalHeight, s = Math.min(1, 900 / W);
-      gridCanvas.width = Math.round(W * s);
-      gridCanvas.height = Math.round(H * s);
-      const g = gridCanvas.getContext('2d');
-      g.drawImage(srcImg, 0, 0, gridCanvas.width, gridCanvas.height);
-      g.lineWidth = 2;
-      rects.forEach((r, i) => {
-        const off = excluded.has(i);
-        g.fillStyle = off ? 'rgba(217, 48, 37, .35)' : 'rgba(26, 115, 232, .12)';
-        g.strokeStyle = off ? '#d93025' : '#1a73e8';
-        g.fillRect(r.x * s, r.y * s, r.w * s, r.h * s);
-        g.strokeRect(r.x * s, r.y * s, r.w * s, r.h * s);
-      });
-      gridCanvas.hidden = false;
-      $('splitEmpty').hidden = true;
-
-      // 칸마다 잘라내기
-      const sizeV = $('splitSize').value;
-      cropUrls = rects.map(r => {
-        const ow = sizeV === 'orig' ? Math.max(1, Math.round(r.w)) : parseInt(sizeV, 10);
-        const oh = Math.max(1, Math.round(ow * r.h / r.w));
-        const c = document.createElement('canvas');
-        c.width = ow;
-        c.height = oh;
-        c.getContext('2d').drawImage(srcImg, r.x, r.y, r.w, r.h, 0, 0, ow, oh);
-        return c.toDataURL('image/jpeg', 0.92);
-      });
-
-      const box = $('crops');
-      box.innerHTML = '';
-      let n = startNum($('splitStart')) - 1;
-      cropUrls.forEach((u, i) => {
-        const off = excluded.has(i);
-        const div = document.createElement('div');
-        div.className = 'crop' + (off ? ' off' : '');
-        div.title = off ? '클릭하면 다시 넣어요' : '클릭하면 저장에서 빼요';
-        div.innerHTML = '<img src="' + u + '" alt=""><span class="num">' + (off ? '빼기' : ++n) + '</span>';
-        div.addEventListener('click', () => {
-          off ? excluded.delete(i) : excluded.add(i);
-          renderSplit();
-        });
-        box.appendChild(div);
-      });
-      $('splitBadge').textContent = keptCrops().length + '장';
-      updateDownloadBtn();
-    }
-
-    const drop = $('drop');
-    drop.addEventListener('click', () => $('fileIn').click());
-    $('fileIn').addEventListener('change', (e) => { loadSplitFile(e.target.files[0]); e.target.value = ''; });
-    ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('over'); }));
-    ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, () => drop.classList.remove('over')));
-    drop.addEventListener('drop', (e) => { e.preventDefault(); loadSplitFile(e.dataTransfer.files[0]); });
-    // 영역 밖에 떨어뜨려도 사진 파일이 열려 페이지가 바뀌지 않게
-    window.addEventListener('dragover', (e) => e.preventDefault());
-    window.addEventListener('drop', (e) => {
-      e.preventDefault();
-      if (currentTab === 'split' && e.target !== drop && e.dataTransfer.files[0]) loadSplitFile(e.dataTransfer.files[0]);
-    });
-    document.addEventListener('paste', (e) => {
-      if (currentTab !== 'split') return;
-      const f = [...e.clipboardData.files].find(f => f.type.startsWith('image/'));
-      if (f) loadSplitFile(f);
-    });
-
-    ['rowsIn', 'colsIn'].forEach(id => $(id).addEventListener('input', () => {
-      detected = null;          // 직접 바꾸면 똑같은 크기로 나누기
-      excluded.clear();
-      renderSplit();
-    }));
-    $('trimIn').addEventListener('input', () => { $('trimVal').textContent = $('trimIn').value; renderSplit(); });
-    $('splitSize').addEventListener('change', renderSplit);
-    $('splitStart').addEventListener('input', renderSplit);
-    $('squareChk').addEventListener('change', renderSplit);
-    $('detectBtn').addEventListener('click', () => {
-      if (!srcImg) return;
-      excluded.clear();
-      showToast(autoDetect() ? '칸을 찾았어요.' : '칸을 자동으로 찾지 못했어요. 직접 맞춰 주세요.');
-      renderSplit();
-    });
-    $('splitSaveBtn').addEventListener('click', () =>
-      saveSet($('splitName'), keptCrops(), $('splitSaveBtn'), '⬇ 폴더에 저장', $('splitStart')));
-
-    // 넣은 사진과 자른 결과만 지움 (클래스 이름·크기 등 설정은 그대로)
-    $('splitResetBtn').addEventListener('click', () => {
-      if (srcImg && !confirm('넣은 사진과 자른 결과 ' + keptCrops().length + '장이 지워져요. 지울까요?')) return;
-      if (srcUrl) URL.revokeObjectURL(srcUrl);
-      srcImg = srcUrl = detected = null;
-      cropUrls = [];
-      excluded.clear();
-      $('detectBtn').disabled = true;
-      gridCanvas.hidden = true;
-      $('splitEmpty').hidden = false;
-      $('crops').innerHTML = '';
-      $('splitBadge').textContent = '0장';
-      updateDownloadBtn();
-      showToast('사진을 지웠어요. 설정은 그대로예요.');
-    });
-
-    // ===== 카메라 =====
-    async function startCamera() {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        showToast('이 브라우저는 웹캠을 지원하지 않아요. 크롬을 사용해 주세요.');
-        return;
-      }
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 1280 }, height: { ideal: 720 } },
-          audio: false
-        });
-        video.srcObject = stream;
-        video.style.display = 'block';
-        $('camOffMsg').style.display = 'none';
-        camBtn.textContent = '카메라 끄기';
-        captureBtn.disabled = false;
-      } catch (err) {
-        console.error(err);
-        if (err.name === 'NotAllowedError') {
-          showToast('카메라 권한이 막혀 있어요. 주소창 왼쪽 아이콘 → 사이트 설정에서 카메라를 "허용"으로 바꾼 뒤 새로고침해 주세요.');
-        } else if (err.name === 'NotFoundError') {
-          showToast('연결된 웹캠을 찾을 수 없어요.');
-        } else if (err.name === 'NotReadableError') {
-          showToast('다른 프로그램이 카메라를 사용 중이에요.');
-        } else {
-          showToast('카메라를 켤 수 없어요: ' + err.message);
-        }
-      }
-    }
-
-    function stopCamera() {
-      stopBurst();
-      if (stream) stream.getTracks().forEach(t => t.stop());
-      stream = null;
-      video.srcObject = null;
-      video.style.display = 'none';
-      $('camOffMsg').style.display = 'block';
-      camBtn.textContent = '카메라 켜기';
-      captureBtn.disabled = true;
-    }
-
-    camBtn.addEventListener('click', () => stream ? stopCamera() : startCamera());
-
-    $('camStart').addEventListener('input', () => renderGallery());
-
-    $('mirrorChk').addEventListener('change', (e) => {
-      video.classList.toggle('mirror', e.target.checked);
-    });
-
-    // ===== 촬영 =====
-    function capture() {
-      if (!stream || !video.videoWidth) return;
-      const size = parseInt($('sizeSel').value, 10);
-      const vw = video.videoWidth, vh = video.videoHeight;
-      const side = Math.min(vw, vh);
-      const sx = (vw - side) / 2, sy = (vh - side) / 2;
-
-      const canvas = document.createElement('canvas');
-      canvas.width = size;
-      canvas.height = size;
-      const ctx = canvas.getContext('2d');
-      if ($('mirrorChk').checked) {
-        ctx.translate(size, 0);
-        ctx.scale(-1, 1);
-      }
-      ctx.drawImage(video, sx, sy, side, side, 0, 0, size, size);
-
-      images.push({ id: nextId++, dataUrl: canvas.toDataURL('image/jpeg', 0.92) });
-      flash();
-      renderGallery();
-      gallery.scrollTop = gallery.scrollHeight;
-    }
-
-    function flash() {
-      const f = $('flash');
-      f.style.opacity = '0.6';
-      setTimeout(() => f.style.opacity = '0', 80);
-    }
-
-    // 한 번 클릭 = 1장, 길게 누르기 = 연속 촬영
-    function startPress(e) {
-      if (captureBtn.disabled) return;
-      e.preventDefault();
-      capture();
-      holdTimer = setTimeout(() => {
-        captureBtn.classList.add('recording');
-        captureBtn.textContent = '연속 촬영 중...';
-        burstTimer = setInterval(capture, 150);
-      }, 450);
-    }
-    function stopBurst() {
-      clearTimeout(holdTimer);
-      clearInterval(burstTimer);
-      holdTimer = burstTimer = null;
-      captureBtn.classList.remove('recording');
-      captureBtn.textContent = '사진 찍기';
-    }
-    captureBtn.addEventListener('pointerdown', startPress);
-    ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev =>
-      captureBtn.addEventListener(ev, stopBurst));
-
-    // ===== 가운데 목록 =====
-    function renderGallery() {
-      $('countBadge').textContent = images.length + '장';
-      updateDownloadBtn();
-
-      if (images.length === 0) {
-        gallery.innerHTML = '<div class="empty-msg gallery-empty">아직 찍은 사진이 없어요.</div>';
-        renderPreview();
-        return;
-      }
-      gallery.innerHTML = '';
-      images.forEach((img, i) => {
-        const div = document.createElement('div');
-        div.className = 'thumb' + (i === selectedIdx ? ' selected' : '');
-        div.innerHTML = '<img src="' + img.dataUrl + '" alt=""><span class="num">' + (startNum($('camStart')) + i) + '</span>';
-        div.addEventListener('click', () => select(i));
-        gallery.appendChild(div);
-      });
-      renderPreview();
-    }
-
-    function select(i) {
-      selectedIdx = i;
-      renderGallery();
-      const el = gallery.children[i];
-      if (el) el.scrollIntoView({ block: 'nearest' });
-    }
-
-    // ===== 왼쪽 미리보기 =====
-    function renderPreview() {
-      const has = selectedIdx >= 0 && selectedIdx < images.length;
-      $('deleteBtn').disabled = !has;
-      $('prevBtn').disabled = !has || selectedIdx === 0;
-      $('nextBtn').disabled = !has || selectedIdx === images.length - 1;
-
-      if (!has) {
-        selectedIdx = -1;
-        $('previewInfo').textContent = '';
-        previewBox.innerHTML = '<div class="empty-msg">가운데에서 사진을 클릭하면<br>여기에서 크게 볼 수 있어요.</div>';
-        return;
-      }
-      $('previewInfo').textContent = (selectedIdx + 1) + ' / ' + images.length;
-      previewBox.innerHTML = '<img src="' + images[selectedIdx].dataUrl + '" alt="">';
-    }
-
-    function deleteSelected() {
-      if (selectedIdx < 0) return;
-      images.splice(selectedIdx, 1);
-      if (images.length === 0) selectedIdx = -1;
-      else if (selectedIdx >= images.length) selectedIdx = images.length - 1;
-      renderGallery();
-      showToast('삭제했어요');
-    }
-
-    $('deleteBtn').addEventListener('click', deleteSelected);
-    $('prevBtn').addEventListener('click', () => selectedIdx > 0 && select(selectedIdx - 1));
-    $('nextBtn').addEventListener('click', () => selectedIdx < images.length - 1 && select(selectedIdx + 1));
-
-    document.addEventListener('keydown', (e) => {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-      if (currentTab !== 'cam' || selectedIdx < 0) return;
-      if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteSelected(); }
-      if (e.key === 'ArrowLeft' && selectedIdx > 0) select(selectedIdx - 1);
-      if (e.key === 'ArrowRight' && selectedIdx < images.length - 1) select(selectedIdx + 1);
-    });
-
-    // ===== 다운로드 (ZIP 안에 폴더 / 1.jpg, 2.jpg ...) =====
-    function safeName(name) {
-      return name.trim().replace(/[\\/:*?"<>|]/g, '_').replace(/\s+/g, ' ') || '이미지';
-    }
-
-    function dataUrlToBlob(dataUrl) {
-      const [head, b64] = dataUrl.split(',');
-      const mime = head.match(/:(.*?);/)[1];
-      const bin = atob(b64);
-      const arr = new Uint8Array(bin.length);
-      for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-      return new Blob([arr], { type: mime });
-    }
-
-    // ===== 저장 위치 기억 (처음 한 번만 고르면 다음부터 자동 저장) =====
-    const DB_NAME = 'ai-image-collector', STORE = 'handles';
-    function openDb() {
-      return new Promise((res, rej) => {
-        const r = indexedDB.open(DB_NAME, 1);
-        r.onupgradeneeded = () => r.result.createObjectStore(STORE);
-        r.onsuccess = () => res(r.result);
-        r.onerror = () => rej(r.error);
-      });
-    }
-    async function idbGet(key) {
-      try {
-        const db = await openDb();
-        return await new Promise((res, rej) => {
-          const q = db.transaction(STORE).objectStore(STORE).get(key);
-          q.onsuccess = () => res(q.result || null);
-          q.onerror = () => rej(q.error);
-        });
-      } catch (e) { return null; }
-    }
-    async function idbSet(key, val) {
-      try {
-        const db = await openDb();
-        await new Promise((res, rej) => {
-          const t = db.transaction(STORE, 'readwrite');
-          t.objectStore(STORE).put(val, key);
-          t.oncomplete = res;
-          t.onerror = () => rej(t.error);
-        });
-      } catch (e) { /* 저장 못 해도 다음에 다시 고르면 됨 */ }
-    }
-
-    // ===== 저장 폴더 만들기·연결 =====
-    const FS_OK = 'showDirectoryPicker' in window;
-    let saveDir = null;      // 연결되어 쓰기 권한이 있는 폴더
-    let savedDir = null;     // 기억된 폴더(권한 재확인 필요할 수 있음)
-
-    function renderFolderUI() {
-      if (!FS_OK) return;
-      const btn = $('connectBtn');
-      if (saveDir) {
-        btn.hidden = true;
-        $('folderStatus').hidden = false;
-        $('folderName').textContent = saveDir.name;
-      } else {
-        btn.hidden = false;
-        $('folderStatus').hidden = true;
-        btn.textContent = savedDir ? '📁 저장 폴더 다시 연결' : '📁 저장 폴더 연결';
-      }
-      updateDownloadBtn();
-    }
-
-    // 고른 폴더를 그대로 연결 (그 안에 클래스 이름 폴더가 바로 만들어짐)
-    async function createAndConnect() {
-      const dir = await window.showDirectoryPicker({ id: 'ai-image-data', mode: 'readwrite', startIn: 'desktop' });
-      saveDir = savedDir = dir;
-      await idbSet('root', dir);
-      renderFolderUI();
-      showToast('"' + dir.name + '" 폴더를 연결했어요. 이 안에 클래스 이름 폴더로 저장돼요.');
-    }
-
-    async function connectFolder() {
-      try {
-        // 예전에 연결한 폴더가 있으면 권한만 다시 받기
-        if (savedDir && !saveDir) {
-          const p = await savedDir.requestPermission({ mode: 'readwrite' });
-          if (p === 'granted') {
-            saveDir = savedDir;
-            renderFolderUI();
-            showToast('"' + saveDir.name + '" 폴더를 다시 연결했어요.');
-            return;
-          }
-        }
-        await createAndConnect();
-      } catch (e) {
-        if (e.name === 'AbortError') return;
-        if (e.name === 'SecurityError' || e.name === 'NotAllowedError') {
-          showToast('이 폴더는 선택할 수 없어요. 바탕화면 안에 새 폴더를 만들거나 다른 위치를 골라 주세요.');
-        } else {
-          showToast('폴더를 연결할 수 없어요: ' + e.message);
-        }
-      }
-    }
-
-    $('connectBtn').addEventListener('click', connectFolder);
-    $('changeLocBtn').addEventListener('click', async () => {
-      try { await createAndConnect(); }
-      catch (e) { if (e.name !== 'AbortError') showToast('위치를 바꿀 수 없어요: ' + e.message); }
-    });
-
-    function updateDownloadBtn() {
-      const noDir = FS_OK && !saveDir;
-      $('downloadBtn').disabled = images.length === 0 || noDir;
-      $('splitSaveBtn').disabled = keptCrops().length === 0 || noDir;
-    }
-
-    // 시작할 때 기억된 폴더 확인
-    (async () => {
-      if (!FS_OK) return;
-      savedDir = await idbGet('root');
-      if (savedDir) {
-        try {
-          if (await savedDir.queryPermission({ mode: 'readwrite' }) === 'granted') saveDir = savedDir;
-        } catch (e) { savedDir = null; }
-      }
-      renderFolderUI();
-    })();
-
-    // 같은 이름 폴더가 있으면 그 폴더, 없으면 null
-    async function findFolder(root, name) {
-      try { return await root.getDirectoryHandle(name); }
-      catch (e) {
-        if (e.name === 'NotFoundError' || e.name === 'TypeMismatchError') return null;
-        throw e;
-      }
-    }
-
-    // 폴더 안의 "숫자.jpg" 중 가장 큰 번호 (없으면 0)
-    async function lastNumber(dir) {
-      let max = 0;
-      for await (const fileName of dir.keys()) {
-        const m = /^(\d+)\.jpe?g$/i.exec(fileName);
-        if (m) max = Math.max(max, parseInt(m[1], 10));
-      }
-      return max;
-    }
-
-    // 사진 묶음을 "클래스 이름" 폴더에 1.jpg, 2.jpg ... 로 저장 (두 탭 공용)
-    async function saveSet(nameInput, list, btn, btnLabel, startInput) {
-      if (list.length === 0) return;
-      const raw = nameInput.value;
-      if (!raw.trim()) {
-        showToast('먼저 범주/클래스 이름을 입력해 주세요.');
-        nameInput.focus();
-        return;
-      }
-      const name = safeName(raw);
-      let start = startNum(startInput);
-      const fileName = (i) => (start + i) + '.jpg';
-      const lastNum = () => start + list.length - 1;
-
-      // 1순위: 폴더에 직접 저장 (크롬·엣지 PC) → 압축 풀기 필요 없음
-      if (FS_OK) {
-        if (!saveDir) {
-          showToast('먼저 위쪽의 "저장 폴더 연결" 버튼을 눌러 주세요.');
-          return;
-        }
-        const root = saveDir;
-        {
-          btn.disabled = true;
-          btn.textContent = '저장 중...';
-          try {
-            // 같은 이름 폴더가 있으면 그 폴더에 이어서 저장 (먼저 물어봄)
-            // 연결한 폴더 이름이 클래스 이름과 같으면 그 폴더 자체에 저장 (우리반 > 우리반 처럼 겹치지 않게)
-            const isRoot = root.name === name;
-            const folderName = isRoot ? root.name : root.name + ' > ' + name;
-            let dir = isRoot ? root : await findFolder(root, name);
-            if (dir) {
-              const max = await lastNumber(dir);
-              if (start <= max) start = max + 1;   // 이미 있는 번호 다음부터 자동으로 이어서
-              const msg = '"' + name + '" 폴더가 이미 있어요' + (max ? ' (마지막 번호: ' + max + '번)' : '') + '.\n'
-                + '이 폴더에 ' + start + '번~' + lastNum() + '번으로 이어서 저장할까요?';
-              if (!confirm(msg)) {
-                showToast('저장을 취소했어요.');
-                return;
-              }
-            } else {
-              dir = await root.getDirectoryHandle(name, { create: true });
-            }
-            for (let i = 0; i < list.length; i++) {
-              const fh = await dir.getFileHandle(fileName(i), { create: true });
-              const w = await fh.createWritable();
-              await w.write(dataUrlToBlob(list[i]));
-              await w.close();
-              btn.textContent = '저장 중... ' + (i + 1) + '/' + list.length;
-            }
-            showToast(list.length + '장(' + start + '~' + lastNum() + '번)을 "' + folderName + '" 폴더에 저장했어요.');
-          } catch (err) {
-            console.error(err);
-            if (err.name === 'NotFoundError') {
-              await idbSet('root', null);
-              saveDir = savedDir = null;
-              showToast('저장 폴더를 찾을 수 없어요. 폴더를 다시 연결해 주세요.');
-            } else if (err.name === 'NotAllowedError') {
-              saveDir = null;
-              showToast('폴더 권한이 꺼졌어요. "저장 폴더 다시 연결"을 눌러 주세요.');
-            } else {
-              showToast('저장 중 오류가 났어요: ' + err.message);
-            }
-          } finally {
-            btn.textContent = btnLabel;
-            renderFolderUI();
-          }
-          return;
-        }
-      }
-
-      // 2순위: ZIP 다운로드 (폴더 저장을 지원하지 않는 브라우저)
-      btn.disabled = true;
-      btn.textContent = '압축 중...';
-      try {
-        const zip = new JSZip();
-        const folder = zip.folder(name);
-        list.forEach((dataUrl, i) => {
-          const base64 = dataUrl.split(',')[1];
-          folder.file(fileName(i), base64, { base64: true });
-        });
-        const blob = await zip.generateAsync({ type: 'blob' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = name + '.zip';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 5000);
-        showToast(list.length + '장(' + start + '~' + lastNum() + '번)을 "' + name + '" 폴더로 저장했어요.');
-      } catch (err) {
-        console.error(err);
-        showToast('다운로드 중 오류가 났어요: ' + err.message);
-      } finally {
-        btn.textContent = btnLabel;
-        updateDownloadBtn();
-      }
-    }
-
-    $('downloadBtn').addEventListener('click', () =>
-      saveSet($('className'), images.map(img => img.dataUrl), $('downloadBtn'), '⬇ 다운로드', $('camStart')));
-
-    // ===== 리셋 =====
-    $('resetBtn').addEventListener('click', () => {
-      if (images.length > 0 && !confirm('찍은 사진 ' + images.length + '장이 모두 지워져요. 처음부터 다시 할까요?')) return;
-      images = [];
-      selectedIdx = -1;
-      nextId = 1;
-      $('className').value = '';
-      $('camStart').value = 1;
-      renderGallery();
-      showToast('초기화했어요');
-      $('className').focus();
-    });
-
-    // ===== 알림 =====
     let toastTimer;
     function showToast(msg) {
-      const t = $('toast');
+      const t = document.getElementById('toast');
       t.textContent = msg;
       t.classList.add('show');
       clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => t.classList.remove("show"), 3500);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
     }
-
-    // 다른 페이지로 이동하거나 닫을 때 경고
-    window.addEventListener('beforeunload', (e) => {
-      if (images.length > 0) { e.preventDefault(); e.returnValue = ''; }
+    document.querySelectorAll('.card.soon').forEach(card => {
+      const tell = () => showToast(card.dataset.name + ' 수집기는 준비 중이에요.');
+      card.addEventListener('click', tell);
+      card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tell(); } });
     });
   </script>
 </body>
