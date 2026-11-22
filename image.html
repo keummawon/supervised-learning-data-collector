@@ -345,7 +345,6 @@
           </select>
         </label>
         <label><input type="checkbox" id="mirrorChk" checked> 좌우 반전</label>
-        <label>시작 번호 <input type="number" class="start-in" id="camStart" min="1" value="1"></label>
       </div>
       <span class="badge" id="totalBadge">클래스/범주 1개 · 총 0장</span>
     </div>
@@ -372,11 +371,8 @@
     const totalCount = () => classes.reduce((n, c) => n + c.images.length, 0);
     const label = (c) => c.name.trim() || '클래스/범주 ' + (classes.indexOf(c) + 1);
 
-    // 저장 시작 번호 (1 이상)
-    function startNum() {
-      const v = parseInt($('camStart').value, 10);
-      return isNaN(v) ? 1 : Math.max(1, Math.min(999999, v));
-    }
+    // 저장 시작 번호: 항상 1번부터 (폴더에 이미 사진이 있으면 저장할 때 자동으로 이어서)
+    function startNum() { return 1; }
 
     // ===== 클래스/범주 한 줄 만들기 =====
     function addRow() {
@@ -524,7 +520,6 @@
     $('mirrorChk').addEventListener('change', (e) => {
       classes.forEach(c => c.el.video.classList.toggle('mirror', e.target.checked));
     });
-    $('camStart').addEventListener('input', () => classes.forEach(renderGallery));
 
     // ===== 촬영 =====
     function capture(c) {
@@ -913,7 +908,6 @@
       classes.forEach(c => c.el.row.remove());
       classes = [];
       lastRow = null;
-      $('camStart').value = 1;
       addRow();
       window.scrollTo({ top: 0, behavior: 'smooth' });
       showToast('초기화했어요');
