@@ -94,7 +94,7 @@
 
     main {
       display: grid;
-      grid-template-columns: 1fr 1.2fr 1fr;
+      grid-template-columns: 1fr 1.3fr 1fr;
       gap: 16px;
       padding: 16px 24px;
       flex: 1;
@@ -116,6 +116,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 8px;
     }
     .badge {
       background: var(--blue-weak);
@@ -123,77 +124,23 @@
       font-size: 13px;
       padding: 3px 10px;
       border-radius: 999px;
+      white-space: nowrap;
     }
-
-    /* 사진 확인 */
-    .preview-box {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #f8fafc;
-      border: 1px dashed var(--line);
-      border-radius: 12px;
-      overflow: hidden;
-      min-height: 200px;
-    }
-    .preview-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
     .empty-msg { color: var(--sub); font-size: 14px; text-align: center; line-height: 1.6; }
-    .preview-controls {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      margin-top: 12px;
-    }
-    .preview-info { font-size: 14px; color: var(--sub); }
     .hint { font-size: 12px; color: var(--sub); margin-top: 8px; }
-
-    /* 찍은 사진 목록 */
-    .gallery {
-      flex: 1;
-      overflow-y: auto;
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-      gap: 8px;
-      align-content: start;
-      padding: 2px;
-    }
-    .thumb {
-      position: relative;
-      aspect-ratio: 1;
-      border-radius: 10px;
-      overflow: hidden;
-      cursor: pointer;
-      border: 3px solid transparent;
-      background: #eef2f7;
-    }
-    .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .thumb.selected { border-color: var(--blue); }
-    .thumb .num {
-      position: absolute;
-      left: 4px;
-      bottom: 4px;
-      background: rgba(15, 23, 42, .65);
-      color: #fff;
-      font-size: 11px;
-      padding: 1px 6px;
-      border-radius: 6px;
-    }
-    .gallery-empty { grid-column: 1 / -1; padding: 40px 0; }
 
     /* 웹캠 */
     label.field { font-size: 14px; font-weight: 600; display: block; margin-bottom: 6px; }
-    input[type="text"], select {
+    select, input[type="text"] {
       width: 100%;
       font: inherit;
       padding: 10px 12px;
       border: 1px solid var(--line);
       border-radius: 10px;
-      margin-bottom: 14px;
       background: #fff;
       color: var(--text);
     }
+    #activeSel { margin-bottom: 14px; font-weight: 600; }
     input:focus, select:focus { outline: 2px solid var(--blue); border-color: transparent; }
     .cam-box {
       position: relative;
@@ -214,6 +161,21 @@
     }
     .cam-box video.mirror { transform: scaleX(-1); }
     .cam-off-msg { color: #94a3b8; font-size: 14px; }
+    .cam-class {
+      position: absolute;
+      left: 10px;
+      top: 10px;
+      max-width: calc(100% - 20px);
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(37, 99, 235, .9);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
     .flash {
       position: absolute; inset: 0;
       background: #fff; opacity: 0;
@@ -245,6 +207,104 @@
       border-radius: 8px;
     }
 
+    /* 클래스별 사진 */
+    .class-list {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 2px;
+    }
+    .class-card {
+      border: 2px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+      background: #fff;
+      cursor: pointer;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .class-card:hover { border-color: #bfd3fb; }
+    .class-card.active {
+      border-color: var(--blue);
+      background: #fbfdff;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, .08);
+    }
+    .cc-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .cc-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .class-card input.cc-name {
+      flex: 1;
+      min-width: 0;
+      padding: 7px 10px;
+      font-weight: 700;
+    }
+    .cc-live {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--blue);
+      white-space: nowrap;
+    }
+    .class-card:not(.active) .cc-live { display: none; }
+    .cc-del {
+      background: none;
+      color: var(--sub);
+      padding: 4px 8px;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .cc-del:hover { background: #fef2f2; color: var(--red); }
+    .cc-thumbs {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+      gap: 6px;
+    }
+    .cc-empty { grid-column: 1 / -1; font-size: 13px; color: var(--sub); padding: 12px 0; text-align: center; }
+    .thumb {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      border: 3px solid transparent;
+      background: #eef2f7;
+    }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .thumb.selected { border-color: var(--blue); }
+    .thumb .num {
+      position: absolute;
+      left: 3px;
+      bottom: 3px;
+      background: rgba(15, 23, 42, .65);
+      color: #fff;
+      font-size: 10px;
+      padding: 0 5px;
+      border-radius: 5px;
+    }
+    #addClassBtn { margin-top: 10px; width: 100%; border: 1.5px dashed #bfd3fb; background: #fbfdff; }
+
+    /* 사진 확인 */
+    .preview-box {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f8fafc;
+      border: 1px dashed var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+      min-height: 200px;
+    }
+    .preview-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .preview-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .preview-info { font-size: 14px; color: var(--sub); font-weight: 600; }
+
     .toast {
       position: fixed;
       left: 50%;
@@ -259,6 +319,7 @@
       font-weight: 600;
       line-height: 1.5;
       text-align: center;
+      white-space: pre-line;
       box-shadow: 0 8px 24px rgba(0,0,0,.2);
       z-index: 1000;
       opacity: 0;
@@ -270,7 +331,7 @@
     @media (max-width: 900px) {
       body { height: auto; }
       main { grid-template-columns: 1fr; padding: 12px 16px; }
-      .gallery { max-height: 360px; }
+      .class-list { max-height: 480px; }
       .preview-box { min-height: 260px; }
       header { flex-wrap: wrap; padding: 10px 16px; }
     }
@@ -297,12 +358,13 @@
     <!-- 웹캠 -->
     <section class="panel">
       <h2>웹캠</h2>
-      <label class="field" for="className">범주/클래스 이름</label>
-      <input type="text" id="className" placeholder="예: 사과, 가위, 마스크 착용" maxlength="40">
+      <label class="field" for="activeSel">지금 찍을 클래스</label>
+      <select id="activeSel"></select>
 
       <div class="cam-box">
         <video id="video" class="mirror" autoplay playsinline muted></video>
         <div class="cam-off-msg" id="camOffMsg">카메라가 꺼져 있어요</div>
+        <div class="cam-class" id="camClass"></div>
         <div class="flash" id="flash"></div>
       </div>
 
@@ -325,20 +387,17 @@
       <div class="hint">버튼을 한 번 누르면 1장, 길게 누르고 있으면 연속으로 찍혀요.</div>
     </section>
 
-    <!-- 찍은 사진 목록 -->
+    <!-- 클래스별 찍은 사진 -->
     <section class="panel">
-      <h2>찍은 사진 <span class="badge" id="countBadge">0장</span></h2>
-      <div class="gallery" id="gallery">
-        <div class="empty-msg gallery-empty">아직 찍은 사진이 없어요.</div>
-      </div>
+      <h2>클래스별 찍은 사진 <span class="badge" id="totalBadge">총 0장</span></h2>
+      <div class="class-list" id="classList"></div>
+      <button class="btn-outline" id="addClassBtn">＋ 클래스 추가</button>
     </section>
 
     <!-- 선택한 사진 보기 -->
     <section class="panel">
       <h2>사진 확인 <span class="preview-info" id="previewInfo"></span></h2>
-      <div class="preview-box" id="previewBox">
-        <div class="empty-msg">가운데에서 사진을 클릭하면<br>여기에서 크게 볼 수 있어요.</div>
-      </div>
+      <div class="preview-box" id="previewBox"></div>
       <div class="preview-controls">
         <button class="btn-outline" id="prevBtn" disabled>◀ 이전</button>
         <button class="btn-danger" id="deleteBtn" disabled>🗑 삭제</button>
@@ -352,25 +411,161 @@
 
   <script>
     // ===== 상태 =====
-    let images = [];        // { id, dataUrl }
-    let selectedIdx = -1;
+    let classes = [];          // { id, name, images: [dataUrl] }
+    let nextClassId = 1;
+    let activeId = null;       // 지금 찍을 클래스
+    let sel = null;            // 사진 확인에서 고른 사진 { cid, i }
     let stream = null;
-    let nextId = 1;
     let holdTimer = null, burstTimer = null;
+    const COLORS = ['#2563eb', '#0ea5e9', '#7c3aed', '#16a34a', '#f59e0b', '#db2777', '#0d9488', '#64748b'];
 
     // ===== 요소 =====
     const $ = (id) => document.getElementById(id);
     const video = $('video');
     const camBtn = $('camBtn');
     const captureBtn = $('captureBtn');
-    const gallery = $('gallery');
+    const classList = $('classList');
     const previewBox = $('previewBox');
+
+    const getClass = (id) => classes.find(c => c.id === id);
+    const classIndex = (id) => classes.findIndex(c => c.id === id);
+    const totalCount = () => classes.reduce((n, c) => n + c.images.length, 0);
+    const label = (c) => c.name.trim() || '(이름 없음)';
 
     // 저장 시작 번호 (1 이상)
     function startNum(input) {
       const v = parseInt(input.value, 10);
       return isNaN(v) ? 1 : Math.max(1, Math.min(999999, v));
     }
+
+    // ===== 클래스 관리 =====
+    function newClass(name) {
+      const c = { id: nextClassId++, name: name, images: [] };
+      classes.push(c);
+      return c;
+    }
+
+    function defaultName() {
+      let n = classes.length + 1;
+      while (classes.some(c => c.name.trim() === '클래스 ' + n)) n++;
+      return '클래스 ' + n;
+    }
+
+    function setupDefault() {
+      classes = [];
+      nextClassId = 1;
+      sel = null;
+      newClass('클래스 1');
+      newClass('클래스 2');
+      activeId = classes[0].id;
+    }
+
+    function setActive(id) {
+      if (activeId === id) return;
+      activeId = id;
+      classList.querySelectorAll('.class-card').forEach(card =>
+        card.classList.toggle('active', +card.dataset.id === id));
+      renderActiveSel();
+    }
+
+    function addClass() {
+      const c = newClass(defaultName());
+      activeId = c.id;
+      renderAll();
+      const inp = cardOf(c.id).querySelector('.cc-name');
+      inp.focus();
+      inp.select();
+      cardOf(c.id).scrollIntoView({ block: 'nearest' });
+    }
+
+    function deleteClass(id) {
+      const c = getClass(id);
+      if (classes.length === 1) { showToast('클래스는 하나 이상 있어야 해요.'); return; }
+      if (c.images.length > 0 && !confirm('"' + label(c) + '" 클래스와 사진 ' + c.images.length + '장이 지워져요. 삭제할까요?')) return;
+      classes.splice(classIndex(id), 1);
+      if (activeId === id) activeId = classes[0].id;
+      if (sel && sel.cid === id) sel = null;
+      renderAll();
+    }
+
+    // ===== 화면 그리기 =====
+    const cardOf = (id) => classList.querySelector('.class-card[data-id="' + id + '"]');
+
+    function renderAll() {
+      classList.innerHTML = '';
+      classes.forEach((c, ci) => {
+        const card = document.createElement('div');
+        card.className = 'class-card' + (c.id === activeId ? ' active' : '');
+        card.dataset.id = c.id;
+        card.innerHTML =
+          '<div class="cc-head">' +
+            '<span class="cc-dot" style="background:' + COLORS[ci % COLORS.length] + '"></span>' +
+            '<input type="text" class="cc-name" maxlength="40" placeholder="클래스 이름 (예: 사과)">' +
+            '<span class="cc-live">📷 촬영 중</span>' +
+            '<span class="badge cc-count"></span>' +
+            '<button class="cc-del" title="클래스 삭제" aria-label="클래스 삭제">✕</button>' +
+          '</div>' +
+          '<div class="cc-thumbs"></div>';
+        const inp = card.querySelector('.cc-name');
+        inp.value = c.name;
+        inp.addEventListener('input', () => { c.name = inp.value; renderActiveSel(); renderPreview(); });
+        inp.addEventListener('focus', () => setActive(c.id));
+        card.querySelector('.cc-del').addEventListener('click', (e) => { e.stopPropagation(); deleteClass(c.id); });
+        card.addEventListener('click', () => setActive(c.id));
+        classList.appendChild(card);
+        renderThumbs(c);
+      });
+      renderActiveSel();
+      renderCounts();
+      renderPreview();
+    }
+
+    function renderThumbs(c) {
+      const card = cardOf(c.id);
+      if (!card) return;
+      card.querySelector('.cc-count').textContent = c.images.length + '장';
+      const box = card.querySelector('.cc-thumbs');
+      box.innerHTML = '';
+      if (c.images.length === 0) {
+        box.innerHTML = '<div class="cc-empty">이 클래스를 고르고 사진을 찍어 주세요.</div>';
+        return;
+      }
+      const start = startNum($('camStart'));
+      c.images.forEach((url, i) => {
+        const t = document.createElement('div');
+        t.className = 'thumb' + (sel && sel.cid === c.id && sel.i === i ? ' selected' : '');
+        t.innerHTML = '<img src="' + url + '" alt=""><span class="num">' + (start + i) + '</span>';
+        t.addEventListener('click', (e) => { e.stopPropagation(); setActive(c.id); selectPhoto(c.id, i); });
+        box.appendChild(t);
+      });
+    }
+
+    function renderActiveSel() {
+      const s = $('activeSel');
+      s.innerHTML = '';
+      classes.forEach(c => {
+        const o = document.createElement('option');
+        o.value = c.id;
+        o.textContent = label(c) + ' (' + c.images.length + '장)';
+        s.appendChild(o);
+      });
+      s.value = activeId;
+      const c = getClass(activeId);
+      $('camClass').textContent = c ? '📷 ' + label(c) : '';
+    }
+
+    function renderCounts() {
+      $('totalBadge').textContent = classes.length + '개 클래스 · 총 ' + totalCount() + '장';
+      updateDownloadBtn();
+    }
+
+    $('activeSel').addEventListener('change', (e) => {
+      setActive(+e.target.value);
+      const card = cardOf(activeId);
+      if (card) card.scrollIntoView({ block: 'nearest' });
+    });
+    $('addClassBtn').addEventListener('click', addClass);
+    $('camStart').addEventListener('input', () => classes.forEach(renderThumbs));
 
     // ===== 카메라 =====
     async function startCamera() {
@@ -415,15 +610,14 @@
 
     camBtn.addEventListener('click', () => stream ? stopCamera() : startCamera());
 
-    $('camStart').addEventListener('input', () => renderGallery());
-
     $('mirrorChk').addEventListener('change', (e) => {
       video.classList.toggle('mirror', e.target.checked);
     });
 
-    // ===== 촬영 =====
+    // ===== 촬영 (지금 고른 클래스에 추가) =====
     function capture() {
-      if (!stream || !video.videoWidth) return;
+      const c = getClass(activeId);
+      if (!c || !stream || !video.videoWidth) return;
       const size = parseInt($('sizeSel').value, 10);
       const vw = video.videoWidth, vh = video.videoHeight;
       const side = Math.min(vw, vh);
@@ -439,10 +633,13 @@
       }
       ctx.drawImage(video, sx, sy, side, side, 0, 0, size, size);
 
-      images.push({ id: nextId++, dataUrl: canvas.toDataURL('image/jpeg', 0.92) });
+      c.images.push(canvas.toDataURL('image/jpeg', 0.92));
       flash();
-      renderGallery();
-      gallery.scrollTop = gallery.scrollHeight;
+      renderThumbs(c);
+      renderActiveSel();
+      renderCounts();
+      const last = cardOf(c.id).querySelector('.thumb:last-child');
+      if (last) last.scrollIntoView({ block: 'nearest' });
     }
 
     function flash() {
@@ -473,70 +670,64 @@
     ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev =>
       captureBtn.addEventListener(ev, stopBurst));
 
-    // ===== 찍은 사진 목록 =====
-    function renderGallery() {
-      $('countBadge').textContent = images.length + '장';
-      updateDownloadBtn();
-
-      if (images.length === 0) {
-        gallery.innerHTML = '<div class="empty-msg gallery-empty">아직 찍은 사진이 없어요.</div>';
-        renderPreview();
-        return;
-      }
-      gallery.innerHTML = '';
-      images.forEach((img, i) => {
-        const div = document.createElement('div');
-        div.className = 'thumb' + (i === selectedIdx ? ' selected' : '');
-        div.innerHTML = '<img src="' + img.dataUrl + '" alt=""><span class="num">' + (startNum($('camStart')) + i) + '</span>';
-        div.addEventListener('click', () => select(i));
-        gallery.appendChild(div);
-      });
-      renderPreview();
-    }
-
-    function select(i) {
-      selectedIdx = i;
-      renderGallery();
-      const el = gallery.children[i];
-      if (el) el.scrollIntoView({ block: 'nearest' });
-    }
-
     // ===== 사진 확인 =====
+    function selectPhoto(cid, i) {
+      const prev = sel && getClass(sel.cid);
+      sel = { cid, i };
+      if (prev && prev.id !== cid) renderThumbs(prev);
+      renderThumbs(getClass(cid));
+      renderPreview();
+      const t = cardOf(cid).querySelectorAll('.thumb')[i];
+      if (t) t.scrollIntoView({ block: 'nearest' });
+    }
+
     function renderPreview() {
-      const has = selectedIdx >= 0 && selectedIdx < images.length;
+      const c = sel && getClass(sel.cid);
+      const has = !!c && sel.i >= 0 && sel.i < c.images.length;
       $('deleteBtn').disabled = !has;
-      $('prevBtn').disabled = !has || selectedIdx === 0;
-      $('nextBtn').disabled = !has || selectedIdx === images.length - 1;
+      $('prevBtn').disabled = !has || sel.i === 0;
+      $('nextBtn').disabled = !has || sel.i === c.images.length - 1;
 
       if (!has) {
-        selectedIdx = -1;
+        sel = null;
         $('previewInfo').textContent = '';
         previewBox.innerHTML = '<div class="empty-msg">가운데에서 사진을 클릭하면<br>여기에서 크게 볼 수 있어요.</div>';
         return;
       }
-      $('previewInfo').textContent = (selectedIdx + 1) + ' / ' + images.length;
-      previewBox.innerHTML = '<img src="' + images[selectedIdx].dataUrl + '" alt="">';
+      $('previewInfo').textContent = label(c) + ' · ' + (sel.i + 1) + ' / ' + c.images.length;
+      previewBox.innerHTML = '<img src="' + c.images[sel.i] + '" alt="">';
     }
 
     function deleteSelected() {
-      if (selectedIdx < 0) return;
-      images.splice(selectedIdx, 1);
-      if (images.length === 0) selectedIdx = -1;
-      else if (selectedIdx >= images.length) selectedIdx = images.length - 1;
-      renderGallery();
+      const c = sel && getClass(sel.cid);
+      if (!c) return;
+      c.images.splice(sel.i, 1);
+      if (c.images.length === 0) sel = null;
+      else if (sel.i >= c.images.length) sel.i = c.images.length - 1;
+      renderThumbs(c);
+      renderActiveSel();
+      renderCounts();
+      renderPreview();
       showToast('삭제했어요');
     }
 
+    function move(d) {
+      const c = sel && getClass(sel.cid);
+      if (!c) return;
+      const i = sel.i + d;
+      if (i >= 0 && i < c.images.length) selectPhoto(c.id, i);
+    }
+
     $('deleteBtn').addEventListener('click', deleteSelected);
-    $('prevBtn').addEventListener('click', () => selectedIdx > 0 && select(selectedIdx - 1));
-    $('nextBtn').addEventListener('click', () => selectedIdx < images.length - 1 && select(selectedIdx + 1));
+    $('prevBtn').addEventListener('click', () => move(-1));
+    $('nextBtn').addEventListener('click', () => move(1));
 
     document.addEventListener('keydown', (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-      if (selectedIdx < 0) return;
+      if (!sel) return;
       if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteSelected(); }
-      if (e.key === 'ArrowLeft' && selectedIdx > 0) select(selectedIdx - 1);
-      if (e.key === 'ArrowRight' && selectedIdx < images.length - 1) select(selectedIdx + 1);
+      if (e.key === 'ArrowLeft') move(-1);
+      if (e.key === 'ArrowRight') move(1);
     });
 
     // ===== 저장 도우미 =====
@@ -605,7 +796,7 @@
       updateDownloadBtn();
     }
 
-    // 고른 폴더를 그대로 연결 (그 안에 클래스 이름 폴더가 바로 만들어짐)
+    // 고른 폴더를 그대로 연결 (그 안에 클래스 이름 폴더가 만들어짐)
     async function createAndConnect() {
       const dir = await window.showDirectoryPicker({ id: 'ai-image-data', mode: 'readwrite', startIn: 'desktop' });
       saveDir = savedDir = dir;
@@ -644,7 +835,7 @@
     });
 
     function updateDownloadBtn() {
-      $('downloadBtn').disabled = images.length === 0 || (FS_OK && !saveDir);
+      $('downloadBtn').disabled = totalCount() === 0 || (FS_OK && !saveDir);
     }
 
     // 시작할 때 기억된 폴더 확인
@@ -678,19 +869,26 @@
       return max;
     }
 
-    // 사진 묶음을 "클래스 이름" 폴더에 1.jpg, 2.jpg ... 로 저장
-    async function saveSet(nameInput, list, btn, btnLabel, startInput) {
-      if (list.length === 0) return;
-      const raw = nameInput.value;
-      if (!raw.trim()) {
-        showToast('먼저 범주/클래스 이름을 입력해 주세요.');
-        nameInput.focus();
+    // ===== 다운로드: 클래스마다 "클래스 이름" 폴더에 1.jpg, 2.jpg ... 로 저장 =====
+    async function saveAll() {
+      const targets = classes.filter(c => c.images.length > 0);
+      if (targets.length === 0) return;
+
+      // 사진이 있는 클래스는 이름이 있어야 하고, 이름이 겹치면 안 됨
+      const noName = targets.find(c => !c.name.trim());
+      if (noName) {
+        setActive(noName.id);
+        cardOf(noName.id).querySelector('.cc-name').focus();
+        showToast('사진이 있는 클래스의 이름을 모두 입력해 주세요.');
         return;
       }
-      const name = safeName(raw);
-      let start = startNum(startInput);
-      const fileName = (i) => (start + i) + '.jpg';
-      const lastNum = () => start + list.length - 1;
+      const names = targets.map(c => safeName(c.name));
+      const dup = names.find((n, i) => names.indexOf(n) !== i);
+      if (dup) { showToast('클래스 이름 "' + dup + '"이(가) 겹쳐요. 이름을 다르게 바꿔 주세요.'); return; }
+
+      const start0 = startNum($('camStart'));
+      const total = totalCount();
+      const btn = $('downloadBtn');
 
       // 1순위: 폴더에 직접 저장 (크롬·엣지 PC) → 압축 풀기 필요 없음
       if (FS_OK) {
@@ -702,31 +900,47 @@
         btn.disabled = true;
         btn.textContent = '저장 중...';
         try {
-          // 연결한 폴더 이름이 클래스 이름과 같으면 그 폴더 자체에 저장 (우리반 > 우리반 처럼 겹치지 않게)
-          const isRoot = root.name === name;
-          const folderName = isRoot ? root.name : root.name + ' > ' + name;
-          // 같은 이름 폴더가 있으면 그 폴더에 이어서 저장 (먼저 물어봄), 없으면 새로 만들기
-          let dir = isRoot ? root : await findFolder(root, name);
-          if (dir) {
-            const max = await lastNumber(dir);
-            if (start <= max) start = max + 1;   // 이미 있는 번호 다음부터 자동으로 이어서
-            const msg = '"' + name + '" 폴더가 이미 있어요' + (max ? ' (마지막 번호: ' + max + '번)' : '') + '.\n'
-              + '이 폴더에 ' + start + '번~' + lastNum() + '번으로 이어서 저장할까요?';
+          // 클래스마다 저장할 폴더와 시작 번호 정하기
+          const plan = [];
+          for (let k = 0; k < targets.length; k++) {
+            const c = targets[k], name = names[k];
+            // 연결한 폴더 이름이 클래스 이름과 같으면 그 폴더 자체에 저장 (우리반 > 우리반 처럼 겹치지 않게)
+            const isRoot = root.name === name;
+            const dir = isRoot ? root : await findFolder(root, name);
+            const max = dir ? await lastNumber(dir) : 0;
+            const start = dir && start0 <= max ? max + 1 : start0;   // 이미 있는 번호 다음부터 이어서
+            plan.push({ c, name, dir, isRoot, start, end: start + c.images.length - 1, exists: !!dir, max });
+          }
+
+          // 이미 있는 폴더가 있으면 저장 전에 한 번 물어보기
+          const existing = plan.filter(p => p.exists);
+          if (existing.length > 0) {
+            const fresh = plan.filter(p => !p.exists);
+            let msg = '이미 있는 폴더에는 이어서 저장해요.\n\n'
+              + existing.map(p => '• ' + p.name + ' (마지막 ' + p.max + '번) → ' + p.start + '번~' + p.end + '번').join('\n');
+            if (fresh.length > 0) {
+              msg += '\n\n새로 만드는 폴더:\n' + fresh.map(p => '• ' + p.name + ' → ' + p.start + '번~' + p.end + '번').join('\n');
+            }
+            msg += '\n\n저장할까요?';
             if (!confirm(msg)) {
               showToast('저장을 취소했어요.');
               return;
             }
-          } else {
-            dir = await root.getDirectoryHandle(name, { create: true });
           }
-          for (let i = 0; i < list.length; i++) {
-            const fh = await dir.getFileHandle(fileName(i), { create: true });
-            const w = await fh.createWritable();
-            await w.write(dataUrlToBlob(list[i]));
-            await w.close();
-            btn.textContent = '저장 중... ' + (i + 1) + '/' + list.length;
+
+          let done = 0;
+          for (const p of plan) {
+            const dir = p.dir || await root.getDirectoryHandle(p.name, { create: true });
+            for (let i = 0; i < p.c.images.length; i++) {
+              const fh = await dir.getFileHandle((p.start + i) + '.jpg', { create: true });
+              const w = await fh.createWritable();
+              await w.write(dataUrlToBlob(p.c.images[i]));
+              await w.close();
+              btn.textContent = '저장 중... ' + (++done) + '/' + total;
+            }
           }
-          showToast(list.length + '장(' + start + '~' + lastNum() + '번)을 "' + folderName + '" 폴더에 저장했어요.');
+          showToast(plan.length + '개 클래스, ' + total + '장을 "' + root.name + '" 폴더에 저장했어요.\n'
+            + plan.map(p => (p.isRoot ? p.name + ' (연결한 폴더)' : p.name) + ' ' + p.start + '~' + p.end + '번').join(' · '));
         } catch (err) {
           console.error(err);
           if (err.name === 'NotFoundError') {
@@ -740,55 +954,52 @@
             showToast('저장 중 오류가 났어요: ' + err.message);
           }
         } finally {
-          btn.textContent = btnLabel;
+          btn.textContent = '⬇ 다운로드';
           renderFolderUI();
         }
         return;
       }
 
-      // 2순위: ZIP 다운로드 (폴더 저장을 지원하지 않는 브라우저)
+      // 2순위: ZIP 다운로드 (폴더 저장을 지원하지 않는 브라우저) — ZIP 안에 클래스별 폴더
       btn.disabled = true;
       btn.textContent = '압축 중...';
       try {
         const zip = new JSZip();
-        const folder = zip.folder(name);
-        list.forEach((dataUrl, i) => {
-          const base64 = dataUrl.split(',')[1];
-          folder.file(fileName(i), base64, { base64: true });
+        targets.forEach((c, k) => {
+          const folder = zip.folder(names[k]);
+          c.images.forEach((dataUrl, i) => {
+            folder.file((start0 + i) + '.jpg', dataUrl.split(',')[1], { base64: true });
+          });
         });
         const blob = await zip.generateAsync({ type: 'blob' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = name + '.zip';
+        a.download = (targets.length === 1 ? names[0] : '이미지 데이터') + '.zip';
         document.body.appendChild(a);
         a.click();
         a.remove();
         setTimeout(() => URL.revokeObjectURL(url), 5000);
-        showToast(list.length + '장(' + start + '~' + lastNum() + '번)을 "' + name + '" 폴더로 저장했어요.');
+        showToast(targets.length + '개 클래스, ' + total + '장을 클래스 이름 폴더로 저장했어요.\n(' + names.join(', ') + ')');
       } catch (err) {
         console.error(err);
         showToast('다운로드 중 오류가 났어요: ' + err.message);
       } finally {
-        btn.textContent = btnLabel;
+        btn.textContent = '⬇ 다운로드';
         updateDownloadBtn();
       }
     }
 
-    $('downloadBtn').addEventListener('click', () =>
-      saveSet($('className'), images.map(img => img.dataUrl), $('downloadBtn'), '⬇ 다운로드', $('camStart')));
+    $('downloadBtn').addEventListener('click', saveAll);
 
     // ===== 리셋 =====
     $('resetBtn').addEventListener('click', () => {
-      if (images.length > 0 && !confirm('찍은 사진 ' + images.length + '장이 모두 지워져요. 처음부터 다시 할까요?')) return;
-      images = [];
-      selectedIdx = -1;
-      nextId = 1;
-      $('className').value = '';
+      const n = totalCount();
+      if ((n > 0 || classes.length > 2) && !confirm('클래스 ' + classes.length + '개와 찍은 사진 ' + n + '장이 모두 지워져요. 처음부터 다시 할까요?')) return;
+      setupDefault();
       $('camStart').value = 1;
-      renderGallery();
+      renderAll();
       showToast('초기화했어요');
-      $('className').focus();
     });
 
     // ===== 알림 =====
@@ -803,8 +1014,12 @@
 
     // 다른 페이지로 이동하거나 닫을 때 경고
     window.addEventListener('beforeunload', (e) => {
-      if (images.length > 0) { e.preventDefault(); e.returnValue = ''; }
+      if (totalCount() > 0) { e.preventDefault(); e.returnValue = ''; }
     });
+
+    // ===== 시작 =====
+    setupDefault();
+    renderAll();
   </script>
 </body>
 </html>
