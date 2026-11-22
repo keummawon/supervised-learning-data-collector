@@ -3,7 +3,7 @@
 인공지능 지도학습에 쓸 데이터를 클래스별로 모으는 웹 페이지입니다.
 첫 화면에서 수집할 데이터 종류(이미지 · 음성 · 텍스트)를 고르면 해당 수집기로 들어갑니다.
 
-👉 바로 사용하기: https://keummawon.github.io/image-data-collector/
+👉 바로 사용하기: https://keummawon.github.io/supervised-learning-data-collector/
 
 | 종류 | 파일 | 기본 상태 |
 |---|---|---|
